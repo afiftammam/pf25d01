@@ -31,15 +31,35 @@ public class GameMain {
             board.paint();
             // Print message if game over
             if (currentState == State.CROSS_WON) {
-                System.out.println("'X' won!\nBye!");
+                System.out.println("'X' won!");
             } else if (currentState == State.NOUGHT_WON) {
-                System.out.println("'O' won!\nBye!");
+                System.out.println("'O' won!");
             } else if (currentState == State.DRAW) {
-                System.out.println("It's Draw!\nBye!");
+                System.out.println("It's Draw!");
             }
             // Switch currentPlayer
             currentPlayer = (currentPlayer == Seed.CROSS) ? Seed.NOUGHT : Seed.CROSS;
         } while (currentState == State.PLAYING);  // repeat until game over
+        do {
+            // Play the game once
+            initGame();
+            // Prompt the user whether to play again
+            boolean invalid = true;
+            do {
+                System.out.print("Play again (y/n)? ");
+                char ans = in.next().charAt(0);
+                if (ans == 'n' && ans != 'N') {
+                    System.out.println("Bye!");
+                    System.exit(0);  // terminate the program
+                }else if (ans == 'y' && ans != 'Y'){
+                    invalid = false;
+
+                }else{
+                    System.out.println ("invalid input y/n, try again");
+                }
+            }while (invalid);
+
+        } while (true);  // repeat until user did not answer yes
     }
 
     /** Perform one-time initialization tasks */

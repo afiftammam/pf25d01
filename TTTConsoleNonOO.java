@@ -43,16 +43,38 @@ public class TTTConsoleNonOO {
             paintBoard();
             // Print message if game over
             if (currentState == CROSS_WON) {
-                System.out.println("'X' won!\nBye!");
+                System.out.println("'X' won!");
             } else if (currentState == NOUGHT_WON) {
-                System.out.println("'O' won!\nBye!");
+                System.out.println("'O' won!");
             } else if (currentState == DRAW) {
-                System.out.println("It's a Draw!\nBye!");
+                System.out.println("It's a Draw!");
             }
+
             // Switch currentPlayer
             currentPlayer = (currentPlayer == CROSS) ? NOUGHT : CROSS;
         } while (currentState == PLAYING); // repeat if not game over
+        do {
+            // Play the game once
+            initGame();
+            // Prompt the user whether to play again
+            boolean invalid = true;
+            do {
+                System.out.print("Play again (y/n)? ");
+                char ans = in.next().charAt(0);
+                if (ans == 'n' && ans != 'N') {
+                    System.out.println("Bye!");
+                    System.exit(0);  // terminate the program
+                }else if (ans == 'y' && ans != 'Y'){
+                    invalid = false;
+
+                }else{
+                    System.out.println ("invalid input y/n, try again");
+                }
+            }while (invalid);
+
+        } while (true);  // repeat until user did not answer yes
     }
+
 
     /** Initialize the board[][], currentState and currentPlayer for a new game*/
     public static void initGame() {
