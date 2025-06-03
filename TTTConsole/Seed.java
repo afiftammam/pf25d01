@@ -1,3 +1,5 @@
+package TTTConsole;
+
 public enum Seed {
         CROSS("X"), NOUGHT("O"), NO_SEED(" ");
 
