@@ -2,6 +2,7 @@ package TTTConsole;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
 /**
  * Tic-Tac-Toe: Two-player Graphics version with Simple-OO in one class
