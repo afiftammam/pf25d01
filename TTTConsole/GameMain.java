@@ -39,7 +39,6 @@ public class GameMain extends JPanel {
                 JOptionPane.INFORMATION_MESSAGE);
 
         super.addMouseListener(new MouseAdapter() {
-            @Override
             public void mouseClicked(MouseEvent e) {
                 int mouseX = e.getX();
                 int mouseY = e.getY();
@@ -130,7 +129,6 @@ public class GameMain extends JPanel {
         JMenuItem itemTentang = new JMenuItem("Tentang");
 
         itemTentang.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 String infoProyek = "Nama Proyek: pf25d01\n" +
                         "Versi: 1.0 (Mini Project Dasprog 2025)\n" +
