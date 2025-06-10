@@ -33,6 +33,7 @@ public class GameMain extends JPanel {
     public static final int HIGHLIGHT_THICKNESS = 4;
 
     public GameMain() {
+        SoundEffect.initGame();
         JOptionPane.showMessageDialog(this,
                 "Selamat datang di Game Tic Tac Toe!\nSiap gaaa?",
                 "Selamat Datang:)!",
@@ -40,6 +41,7 @@ public class GameMain extends JPanel {
 
         super.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
+                SoundEffect.EAT_FOOD.play();
                 int mouseX = e.getX();
                 int mouseY = e.getY();
                 int row = mouseY / Cell.SIZE;
@@ -75,6 +77,7 @@ public class GameMain extends JPanel {
             }
         });
 
+
         JPanel panelBawah = new JPanel(new BorderLayout());
         panelBawah.add(statusBar, BorderLayout.CENTER);
         panelBawah.add(tombolMulaiBaru, BorderLayout.EAST);
@@ -84,10 +87,7 @@ public class GameMain extends JPanel {
         super.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 30));
         super.setBorder(BorderFactory.createLineBorder(COLOR_BG_STATUS, 2, false));
 
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        if (parentFrame != null) {
-            parentFrame.setJMenuBar(createMenuBar());
-        }
+        // !!! KODE BERMASALAH DIHAPUS DARI SINI !!!
 
         inisialisasiGameAwal();
         mulaiPermainanBaru();
@@ -173,14 +173,18 @@ public class GameMain extends JPanel {
             statusBar.setText("Seri! Klik 'Mulai Baru'. | Skor: " + namaPemainX + " " + scoreX + " - " + scoreO + " " + namaPemainO);
         } else if (currentState == State.CROSS_WON) {
             statusBar.setForeground(Color.RED);
-            if (currentState != State.CROSS_WON) {
+            // NOTE: There was a logic bug here where score was not updated correctly. This is also fixed.
+            if (currentState == State.CROSS_WON) { // This check ensures score is incremented only once
                 scoreX++;
+                currentState = null; // Prevent score from incrementing again on repaint
             }
             statusBar.setText(namaPemainX + " Menang! Klik 'Mulai Baru'. | Skor: " + namaPemainX + " " + scoreX + " - " + scoreO + " " + namaPemainO);
         } else if (currentState == State.NOUGHT_WON) {
             statusBar.setForeground(Color.RED);
-            if (currentState != State.NOUGHT_WON) {
+            // NOTE: There was a logic bug here where score was not updated correctly. This is also fixed.
+            if (currentState == State.NOUGHT_WON) { // This check ensures score is incremented only once
                 scoreO++;
+                currentState = null; // Prevent score from incrementing again on repaint
             }
             statusBar.setText(namaPemainO + " Menang! Klik 'Mulai Baru'. | Skor: " + namaPemainX + " " + scoreX + " - " + scoreO + " " + namaPemainO);
         }
@@ -191,7 +195,12 @@ public class GameMain extends JPanel {
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame frame = new JFrame(TITLE);
-                GameMain gamePanel = new GameMain(); // Buat instance GameMain
+                GameMain gamePanel = new GameMain();
+
+                // === PERBAIKAN DI SINI ===
+                // Buat menu bar dan tambahkan ke frame secara langsung.
+                frame.setJMenuBar(gamePanel.createMenuBar());
+
                 frame.setContentPane(gamePanel); // Set konten frame
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.pack();
