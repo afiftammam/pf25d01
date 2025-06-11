@@ -75,6 +75,7 @@ public class GameMain extends JPanel {
             }
         });
 
+
         JPanel panelBawah = new JPanel(new BorderLayout());
         panelBawah.add(statusBar, BorderLayout.CENTER);
         panelBawah.add(tombolMulaiBaru, BorderLayout.EAST);
