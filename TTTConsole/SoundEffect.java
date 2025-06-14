@@ -20,7 +20,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * For Eclipse, place the audio file under "src", which will be copied into "bin".
  */
 public enum SoundEffect {
-    EAT_FOOD("TTTConsole/audio/eatfood.wav"),
+    EAT_FOOD("TTTConsole/audio/hidup-jokowi.wav"),
     EXPLODE("TTTConsole/audio/explode.wav"),
     DIE("TTTConsole/audio/die.wav");
 
