@@ -16,6 +16,7 @@ public class GameMain extends JPanel {
     private Seed currentPlayer;
     private GameMode gameMode;
     private Difficulty currentDifficulty = Difficulty.HARD;
+    private int boardSize = 3; // Ukuran default
 
     private String nameX = "Player X";
     private String nameO = "Player O";
@@ -27,32 +28,30 @@ public class GameMain extends JPanel {
     private final AIPlayer aiPlayer;
     private final DatabaseManager dbManager;
 
-    // --- TOMBOL BARU DIDEKLARASIKAN DI SINI ---
     private JButton playAgainButton;
+    private JPanel gameBoardPanel; // Deklarasikan di sini agar bisa diakses
 
     public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
         this.dbManager = dbManager;
-        this.board = new Board(this);
         this.aiPlayer = new AIPlayer();
 
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 70));
         setBackground(Theme.BG_MAIN);
 
-        JPanel gameBoardPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                setBackground(Theme.BG_MAIN);
-                board.paint((Graphics2D) g);
-                paintHoverEffect((Graphics2D) g);
-            }
-        };
-        gameBoardPanel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT));
+        // Panel papan permainan akan diinisialisasi ulang setiap game baru
+        gameBoardPanel = new JPanel();
         add(gameBoardPanel, BorderLayout.CENTER);
 
+        // Panel bawah dengan tombol-tombol
+        JPanel bottomPanel = createBottomPanel();
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        SoundEffect.initGame();
+    }
+
+    private JPanel createBottomPanel() {
         JPanel bottomPanel = new JPanel(new BorderLayout(20, 0));
         bottomPanel.setOpaque(false);
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
@@ -64,50 +63,87 @@ public class GameMain extends JPanel {
         backButton.addActionListener(e -> handleBackButton());
         bottomPanel.add(backButton, BorderLayout.WEST);
 
-        // --- INISIALISASI DAN STYLE TOMBOL PLAY AGAIN ---
         playAgainButton = new JButton("Play Again");
         playAgainButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        playAgainButton.setBackground(Theme.WIN_LINE); // Warna yang menarik perhatian
+        playAgainButton.setBackground(Theme.WIN_LINE);
         playAgainButton.setForeground(Theme.BG_MAIN);
-        playAgainButton.setVisible(false); // Sembunyikan di awal
+        playAgainButton.setVisible(false);
         playAgainButton.addActionListener(e -> resetGame());
-        bottomPanel.add(playAgainButton, BorderLayout.EAST); // Tambahkan ke sisi kanan
+        bottomPanel.add(playAgainButton, BorderLayout.EAST);
 
         JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
         statusLabel.setFont(Theme.FONT_STATUS);
         statusLabel.setForeground(Theme.TEXT_LIGHT);
         bottomPanel.add(statusLabel, BorderLayout.CENTER);
-
-        add(bottomPanel, BorderLayout.SOUTH);
-
-        SoundEffect.initGame();
-        addMouseListeners(gameBoardPanel);
+        return bottomPanel;
     }
 
     public void setDifficulty(Difficulty difficulty) {
         this.currentDifficulty = difficulty;
     }
 
-    public void startNewGame(GameMode mode) {
+    // --- PERUBAHAN: Menerima ukuran papan sebagai parameter ---
+    public void startNewGame(GameMode mode, int size) {
         this.gameMode = mode;
+        this.boardSize = size;
+
+        // Buat board baru dengan ukuran yang dipilih
+        this.board = new Board(this, boardSize);
+
+        // Atur ulang ukuran panel utama
+        setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 70));
+
+        // Hapus panel game lama dan buat yang baru
+        remove(gameBoardPanel);
+        gameBoardPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                setBackground(Theme.BG_MAIN);
+                board.paint((Graphics2D) g);
+                paintHoverEffect((Graphics2D) g);
+            }
+        };
+        gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
+        add(gameBoardPanel, BorderLayout.CENTER);
+
+        // Tambahkan listener lagi ke panel baru
+        addMouseListeners(gameBoardPanel);
+
+        // Revalidate dan repaint frame
+        revalidate();
+        repaint();
+        JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (topFrame != null) {
+            topFrame.pack();
+            topFrame.setLocationRelativeTo(null);
+        }
+
         resetGame();
     }
 
     private void resetGame() {
         board.newGame();
-        playAgainButton.setVisible(false); // Sembunyikan tombol saat game baru dimulai
+        playAgainButton.setVisible(false);
         currentState = State.PLAYING;
         currentPlayer = Seed.CROSS;
 
-        nameX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
-        if (nameX == null || nameX.trim().isEmpty()) nameX = "Player X";
+        // Hanya minta nama jika game pertama kali dimulai (atau reset total)
+        // Untuk "Play Again", kita gunakan nama yang sama
+        if (nameX.equals("Player X")) {
+            nameX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
+            if (nameX == null || nameX.trim().isEmpty()) nameX = "Player X";
 
-        if (gameMode == GameMode.PLAYER_VS_PLAYER) {
-            nameO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
-            if (nameO == null || nameO.trim().isEmpty()) nameO = "Player O";
-        } else {
+            if (gameMode == GameMode.PLAYER_VS_PLAYER) {
+                nameO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
+                if (nameO == null || nameO.trim().isEmpty()) nameO = "Player O";
+            }
+        }
+
+        if (gameMode == GameMode.PLAYER_VS_AI) {
             nameO = "Skynet AI (" + currentDifficulty.name() + ")";
         }
+
         repaint();
     }
 
@@ -115,8 +151,6 @@ public class GameMain extends JPanel {
         targetPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Hapus logika lama untuk restart game dari sini.
-                // Klik di papan hanya berfungsi saat permainan sedang berlangsung.
                 if (currentState == State.PLAYING) {
                     if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
                     int row = e.getY() / Cell.SIZE;
@@ -147,9 +181,7 @@ public class GameMain extends JPanel {
                 triggerAIMove();
             }
         } else {
-            // --- MUNCULKAN TOMBOL PLAY AGAIN SAAT GAME SELESAI ---
             playAgainButton.setVisible(true);
-
             if (currentState == State.CROSS_WON || currentState == State.NOUGHT_WON) SoundEffect.EXPLODE.play();
             else if (currentState == State.DRAW) SoundEffect.DIE.play();
             if (dbManager != null) handleDatabaseUpdate();
@@ -169,6 +201,7 @@ public class GameMain extends JPanel {
         timer.start();
     }
 
+    // ... sisa metode (handleBackButton, handleDatabaseUpdate, paintHoverEffect, paintComponent) tidak berubah signifikan ...
     private void handleBackButton() {
         if (currentState == State.PLAYING) {
             int response = JOptionPane.showConfirmDialog(
@@ -176,6 +209,9 @@ public class GameMain extends JPanel {
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (response == JOptionPane.NO_OPTION) return;
         }
+        // Reset nama saat kembali ke menu
+        nameX = "Player X";
+        nameO = "Player O";
         cardLayout.show(mainPanel, "MENU");
     }
 
@@ -206,18 +242,25 @@ public class GameMain extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        JPanel bottomPanel = (JPanel) getComponent(1);
-        JLabel statusLabel = (JLabel) bottomPanel.getComponent(2); // Indeks label sekarang 2
-        String status;
-        if (currentState == State.PLAYING) {
-            status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
-        } else if (currentState == State.CROSS_WON) {
-            status = nameX + " Wins!";
-        } else if (currentState == State.NOUGHT_WON) {
-            status = nameO + " Wins!";
-        } else {
-            status = "It's a Draw!";
+        // Pastikan komponen panel bawah ada sebelum mengaksesnya
+        if (getComponentCount() > 1 && getComponent(1) instanceof JPanel) {
+            JPanel bottomPanel = (JPanel) getComponent(1);
+            if (bottomPanel.getComponentCount() > 2 && bottomPanel.getComponent(2) instanceof JLabel) {
+                JLabel statusLabel = (JLabel) bottomPanel.getComponent(2);
+                String status;
+                if (currentState == State.PLAYING) {
+                    status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
+                } else if (currentState == State.CROSS_WON) {
+                    status = nameX + " Wins!";
+                } else if (currentState == State.NOUGHT_WON) {
+                    status = nameO + " Wins!";
+                } else if (currentState == State.DRAW){
+                    status = "It's a Draw!";
+                } else {
+                    status = " ";
+                }
+                statusLabel.setText(status);
+            }
         }
-        statusLabel.setText(status);
     }
 }

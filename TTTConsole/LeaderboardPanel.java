@@ -3,6 +3,7 @@ package TTTConsole;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.List;
 
 public class LeaderboardPanel extends JPanel {
@@ -10,7 +11,8 @@ public class LeaderboardPanel extends JPanel {
     private final JPanel mainPanel;
     private final DatabaseManager dbManager;
     private JTable leaderboardTable;
-    private final String[] columnNames = {"Rank", "Username", "Wins", "Losses", "Draws"};
+    // --- PERUBAHAN: Menambahkan kolom baru ---
+    private final String[] columnNames = {"Rank", "Username", "Wins", "Losses", "Draws", "Win Rate"};
 
     public LeaderboardPanel(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
@@ -53,7 +55,7 @@ public class LeaderboardPanel extends JPanel {
     }
 
     public void refreshLeaderboard() {
-        List<Player> players = dbManager.getLeaderboard();
+        List<Player> players = dbManager.getLeaderboard(); //
         DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -61,25 +63,30 @@ public class LeaderboardPanel extends JPanel {
             }
         };
 
+        NumberFormat percentFormat = NumberFormat.getPercentInstance();
+        percentFormat.setMinimumFractionDigits(1);
+
         int rank = 1;
         for (Player p : players) {
+            // --- PERUBAHAN: Menambahkan data Win Rate ke tabel ---
             model.addRow(new Object[]{
                     rank++,
-                    p.getUsername(),
-                    p.getWins(),
-                    p.getLosses(),
-                    p.getDraws()
+                    p.getUsername(), //
+                    p.getWins(), //
+                    p.getLosses(), //
+                    p.getDraws(), //
+                    percentFormat.format(p.getWinRate())
             });
         }
         leaderboardTable.setModel(model);
     }
 
     private void styleButton(JButton button) {
-        button.setFont(Theme.FONT_BUTTON);
-        button.setForeground(Theme.TEXT_LIGHT);
-        button.setBackground(Theme.BG_PANEL);
+        button.setFont(Theme.FONT_BUTTON); //
+        button.setForeground(Theme.TEXT_LIGHT); //
+        button.setBackground(Theme.BG_PANEL); //
         button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createLineBorder(Theme.GRID, 2));
+        button.setBorder(BorderFactory.createLineBorder(Theme.GRID, 2)); //
         button.setPreferredSize(new Dimension(200, 50));
     }
 }

@@ -10,12 +10,17 @@ public class MainMenuPanel extends JPanel {
     private final CardLayout cardLayout;
     private GameMain gameMain;
     private LeaderboardPanel leaderboardPanel;
-    private JComboBox<String> difficultySelector; // Dropdown untuk kesulitan
+    private JComboBox<String> difficultySelector;
+    private JComboBox<String> boardSizeSelector;
 
     public MainMenuPanel(JPanel mainPanel, CardLayout cardLayout) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
-        setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 70));
+
+        // --- PERBAIKAN: Gunakan ukuran default yang tetap untuk panel menu ---
+        // Ukuran ini didasarkan pada papan 3x3 (3 * 140 = 420) plus tinggi panel bawah (70)
+        setPreferredSize(new Dimension(420, 490));
+
         setBackground(Theme.BG_MAIN);
         initUI();
     }
@@ -36,14 +41,20 @@ public class MainMenuPanel extends JPanel {
         titleLabel.setForeground(Theme.TEXT_LIGHT);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        JPanel boardSizePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        boardSizePanel.setOpaque(false);
+        JLabel boardSizeLabel = new JLabel("Board Size:");
+        boardSizeLabel.setFont(Theme.FONT_STATUS);
+        boardSizeLabel.setForeground(Theme.TEXT_LIGHT);
+        boardSizeSelector = new JComboBox<>(new String[]{"3x3", "4x4"});
+        boardSizeSelector.setFont(Theme.FONT_STATUS);
+        boardSizePanel.add(boardSizeLabel);
+        boardSizePanel.add(boardSizeSelector);
+
         JButton pvpButton = new JButton("Player vs Player");
         styleButton(pvpButton);
-        pvpButton.addActionListener(e -> {
-            gameMain.startNewGame(GameMain.GameMode.PLAYER_VS_PLAYER);
-            cardLayout.show(mainPanel, "GAME");
-        });
+        pvpButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_PLAYER));
 
-        // Panel untuk Player vs AI dan pilihan kesulitan
         JPanel pvaPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         pvaPanel.setOpaque(false);
 
@@ -58,16 +69,7 @@ public class MainMenuPanel extends JPanel {
         pvaPanel.add(pvaButton);
         pvaPanel.add(difficultySelector);
 
-        pvaButton.addActionListener(e -> {
-            String selected = (String) difficultySelector.getSelectedItem();
-            GameMain.Difficulty diff = GameMain.Difficulty.HARD;
-            if ("Easy".equals(selected)) diff = GameMain.Difficulty.EASY;
-            if ("Medium".equals(selected)) diff = GameMain.Difficulty.MEDIUM;
-
-            gameMain.setDifficulty(diff);
-            gameMain.startNewGame(GameMain.GameMode.PLAYER_VS_AI);
-            cardLayout.show(mainPanel, "GAME");
-        });
+        pvaButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_AI));
 
         JButton leaderboardButton = new JButton("Leaderboard");
         styleButton(leaderboardButton);
@@ -79,16 +81,32 @@ public class MainMenuPanel extends JPanel {
         });
 
         contentPanel.add(titleLabel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 50)));
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+        contentPanel.add(boardSizePanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 30)));
         contentPanel.add(pvpButton);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        contentPanel.add(pvaPanel); // Tambahkan panel gabungan
+        contentPanel.add(pvaPanel);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
         contentPanel.add(leaderboardButton);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
         add(contentPanel, gbc);
+    }
+
+    private void startGame(GameMain.GameMode mode) {
+        String selectedSize = (String) boardSizeSelector.getSelectedItem();
+        int size = "3x3".equals(selectedSize) ? 3 : 4;
+
+        String selectedDiff = (String) difficultySelector.getSelectedItem();
+        GameMain.Difficulty diff = GameMain.Difficulty.HARD;
+        if ("Easy".equals(selectedDiff)) diff = GameMain.Difficulty.EASY;
+        if ("Medium".equals(selectedDiff)) diff = GameMain.Difficulty.MEDIUM;
+
+        gameMain.setDifficulty(diff);
+        gameMain.startNewGame(mode, size);
+        cardLayout.show(mainPanel, "GAME");
     }
 
     private void styleButton(JButton button) {
@@ -100,7 +118,7 @@ public class MainMenuPanel extends JPanel {
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         Dimension buttonSize = new Dimension(280, 65);
         if (button.getText().equals("Player vs AI")) {
-            buttonSize = new Dimension(200, 65); // Perkecil tombol PvA
+            buttonSize = new Dimension(200, 65);
         }
         button.setPreferredSize(buttonSize);
         button.setMinimumSize(buttonSize);

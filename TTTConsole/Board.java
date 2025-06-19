@@ -5,26 +5,32 @@ import javax.swing.JPanel;
 import java.awt.*;
 import java.io.Serializable;
 
-/**
- * Kelas Board yang telah direfaktor.
- * Menambahkan metode publik untuk mendapatkan state permainan saat ini.
- */
-public class Board implements Serializable { // Tambahkan Serializable untuk fitur Save/Load di masa depan
-    public static final int ROWS = 3;
-    public static final int COLS = 3;
-    public static final int CANVAS_WIDTH = Cell.SIZE * COLS;
-    public static final int CANVAS_HEIGHT = Cell.SIZE * ROWS;
+public class Board implements Serializable {
+    // --- PERUBAHAN: Variabel ini tidak lagi final/static ---
+    public int ROWS;
+    public int COLS;
+    public int WIN_STREAK; // Jumlah bidak berderet untuk menang
+
+    // --- PERUBAHAN: Ukuran kanvas kini dihitung dinamis ---
+    public int CANVAS_WIDTH;
+    public int CANVAS_HEIGHT;
 
     public Cell[][] cells;
     private int[] winningLineCoords = null;
     private float winAnimationProgress = 0f;
 
-    // Objek Swing tidak bisa diserialisasi, tandai sebagai 'transient'
     private transient Timer winAnimationTimer;
     private transient JPanel gameSurface;
 
-    public Board(JPanel surface) {
+    public Board(JPanel surface, int size) {
         this.gameSurface = surface;
+        this.ROWS = size;
+        this.COLS = size;
+        this.WIN_STREAK = (size == 3) ? 3 : 4; // Menang jika 3 berderet di 3x3, 4 berderet di 4x4
+
+        this.CANVAS_WIDTH = Cell.SIZE * COLS;
+        this.CANVAS_HEIGHT = Cell.SIZE * ROWS;
+
         cells = new Cell[ROWS][COLS];
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
@@ -37,7 +43,6 @@ public class Board implements Serializable { // Tambahkan Serializable untuk fit
         this.gameSurface = surface;
     }
 
-    // Metode checkGameState yang ada tidak berubah
     public State checkGameState(Seed player, int row, int col) {
         if (hasWon(player, row, col)) {
             return (player == Seed.CROSS) ? State.CROSS_WON : State.NOUGHT_WON;
@@ -48,13 +53,6 @@ public class Board implements Serializable { // Tambahkan Serializable untuk fit
         return State.PLAYING;
     }
 
-    // --- METODE BARU UNTUK REFAKTORISASI ---
-
-    /**
-     * Memeriksa keadaan permainan saat ini secara keseluruhan.
-     * Berguna untuk simulasi AI tanpa memerlukan info langkah terakhir.
-     * @return State permainan saat ini (PLAYING, DRAW, CROSS_WON, NOUGHT_WON).
-     */
     public State getCurrentGameState() {
         if (hasWon(Seed.NOUGHT)) return State.NOUGHT_WON;
         if (hasWon(Seed.CROSS)) return State.CROSS_WON;
@@ -62,36 +60,87 @@ public class Board implements Serializable { // Tambahkan Serializable untuk fit
         return State.PLAYING;
     }
 
-    /**
-     * Overload metode hasWon untuk memeriksa kemenangan pemain tertentu di seluruh papan.
-     * @param p Bidak pemain (CROSS atau NOUGHT).
-     * @return boolean true jika pemain p menang.
-     */
+    // --- PERUBAHAN: Overload hasWon untuk memeriksa seluruh papan secara dinamis ---
     private boolean hasWon(Seed p) {
-        // Cek 3 baris dan 3 kolom
-        for (int i = 0; i < 3; i++) {
-            if ((cells[i][0].content == p && cells[i][1].content == p && cells[i][2].content == p) ||
-                    (cells[0][i].content == p && cells[1][i].content == p && cells[2][i].content == p)) {
-                return true;
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                if (cells[r][c].content == p) {
+                    // Cek dari sel ini ke kanan, bawah, diagonal kanan bawah, dan diagonal kanan atas
+                    if (checkDirection(r, c, 1, 0, p) || // Horizontal
+                            checkDirection(r, c, 0, 1, p) || // Vertikal
+                            checkDirection(r, c, 1, 1, p) || // Diagonal \
+                            checkDirection(r, c, 1, -1, p)) { // Diagonal /
+                        return true;
+                    }
+                }
             }
         }
-        // Cek 2 diagonal
-        return (cells[0][0].content == p && cells[1][1].content == p && cells[2][2].content == p) ||
-                (cells[0][2].content == p && cells[1][1].content == p && cells[2][0].content == p);
+        return false;
     }
 
-    // --- Sisa metode tidak berubah ---
+    // --- PERUBAHAN: Logika hasWon dibuat dinamis untuk papan N x N ---
+    private boolean hasWon(Seed p, int r, int c) {
+        // Cek Horizontal, Vertikal, dan dua Diagonal dari titik (r, c)
+        return checkLine(r, c, 1, 0, p) || // Horizontal
+                checkLine(r, c, 0, 1, p) || // Vertikal
+                checkLine(r, c, 1, 1, p) || // Diagonal \
+                checkLine(r, c, 1, -1, p);  // Diagonal /
+    }
 
-    public void startWinAnimation() {
-        winAnimationTimer = new Timer(10, e -> {
-            winAnimationProgress += 0.05f;
-            if (winAnimationProgress >= 1.0f) {
-                winAnimationProgress = 1.0f;
-                winAnimationTimer.stop();
+    /**
+     * Metode BANTU BARU: Memeriksa garis kemenangan dari satu titik.
+     * Ia memeriksa kedua arah dari titik awal.
+     */
+    private boolean checkLine(int r, int c, int dr, int dc, Seed p) {
+        int count = 1;
+        // Cek arah maju (dr, dc)
+        for (int i = 1; i < WIN_STREAK; i++) {
+            int nr = r + i * dr;
+            int nc = c + i * dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == p) {
+                count++;
+            } else {
+                break;
             }
-            if (gameSurface != null) gameSurface.repaint();
-        });
-        winAnimationTimer.start();
+        }
+        // Cek arah mundur (-dr, -dc)
+        for (int i = 1; i < WIN_STREAK; i++) {
+            int nr = r - i * dr;
+            int nc = c - i * dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == p) {
+                count++;
+            } else {
+                break;
+            }
+        }
+
+        if (count >= WIN_STREAK) {
+            // Jika menang, simpan koordinat garis kemenangan untuk animasi
+            int r1 = r - (WIN_STREAK - 1) * dr;
+            int c1 = c - (WIN_STREAK - 1) * dc;
+            while(r1 < 0 || r1 >= ROWS || c1 < 0 || c1 >= COLS || cells[r1][c1].content != p) {
+                r1 += dr; c1 += dc;
+            }
+            int r2 = r1 + (WIN_STREAK - 1) * dr;
+            int c2 = c1 + (WIN_STREAK - 1) * dc;
+            winningLineCoords = new int[]{r1, c1, r2, c2};
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Metode BANTU BARU: Hanya memeriksa satu arah (digunakan oleh AI).
+     */
+    private boolean checkDirection(int r, int c, int dr, int dc, Seed p) {
+        for (int i = 0; i < WIN_STREAK; i++) {
+            int nr = r + i * dr;
+            int nc = c + i * dc;
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || cells[nr][nc].content != p) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void newGame() {
@@ -118,22 +167,6 @@ public class Board implements Serializable { // Tambahkan Serializable untuk fit
         cells[row][col].content = player;
     }
 
-    private boolean hasWon(Seed p, int r, int c) {
-        if (cells[r][0].content == p && cells[r][1].content == p && cells[r][2].content == p) {
-            winningLineCoords = new int[]{r, 0, r, 2}; return true;
-        }
-        if (cells[0][c].content == p && cells[1][c].content == p && cells[2][c].content == p) {
-            winningLineCoords = new int[]{0, c, 2, c}; return true;
-        }
-        if (r == c && cells[0][0].content == p && cells[1][1].content == p && cells[2][2].content == p) {
-            winningLineCoords = new int[]{0, 0, 2, 2}; return true;
-        }
-        if (r + c == 2 && cells[0][2].content == p && cells[1][1].content == p && cells[2][0].content == p) {
-            winningLineCoords = new int[]{0, 2, 2, 0}; return true;
-        }
-        return false;
-    }
-
     public boolean isDraw() {
         for(Cell[] row : cells) {
             for(Cell cell : row) {
@@ -141,6 +174,18 @@ public class Board implements Serializable { // Tambahkan Serializable untuk fit
             }
         }
         return true;
+    }
+
+    public void startWinAnimation() {
+        winAnimationTimer = new Timer(10, e -> {
+            winAnimationProgress += 0.05f;
+            if (winAnimationProgress >= 1.0f) {
+                winAnimationProgress = 1.0f;
+                winAnimationTimer.stop();
+            }
+            if (gameSurface != null) gameSurface.repaint();
+        });
+        winAnimationTimer.start();
     }
 
     public void paint(Graphics2D g2d) {
