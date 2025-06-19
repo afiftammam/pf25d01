@@ -1,9 +1,10 @@
 package TTTConsole;
 
 import java.awt.*;
+import java.io.Serializable;
 
-public class Cell {
-    public static final int SIZE = 140; // Ukuran sel diperbesar untuk tampilan lebih baik
+public class Cell implements Serializable { // Tambahkan Serializable
+    public static final int SIZE = 140;
     private static final int PADDING = 25;
 
     Seed content;
@@ -23,11 +24,9 @@ public class Cell {
         int x = col * SIZE;
         int y = row * SIZE;
 
-        // Gambar latar belakang sel
         g2d.setColor(Theme.BG_PANEL);
         g2d.fillRect(x, y, SIZE, SIZE);
 
-        // Gambar X atau O
         g2d.setStroke(new BasicStroke(10, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         if (content == Seed.CROSS) {
             g2d.setColor(Theme.CROSS);

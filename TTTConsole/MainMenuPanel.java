@@ -8,75 +8,107 @@ import java.awt.event.MouseEvent;
 public class MainMenuPanel extends JPanel {
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
-    private GameMain gameMain; // Diubah dari GamePanel
+    private GameMain gameMain;
+    private LeaderboardPanel leaderboardPanel;
+    private JComboBox<String> difficultySelector; // Dropdown untuk kesulitan
 
     public MainMenuPanel(JPanel mainPanel, CardLayout cardLayout) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
         setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 70));
         setBackground(Theme.BG_MAIN);
-        setLayout(null); // Gunakan layout absolut untuk penempatan presisi
         initUI();
     }
 
-    public void setGamePanel(GameMain gameMain) { // Diubah dari GamePanel
-        this.gameMain = gameMain;
-    }
+    public void setGamePanel(GameMain gameMain) { this.gameMain = gameMain; }
+    public void setLeaderboardPanel(LeaderboardPanel leaderboardPanel) { this.leaderboardPanel = leaderboardPanel; }
 
     private void initUI() {
-        // Tombol Player vs Player
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setOpaque(false);
+
+        JLabel titleLabel = new JLabel("Tic Tac Toe");
+        titleLabel.setFont(Theme.FONT_TITLE);
+        titleLabel.setForeground(Theme.TEXT_LIGHT);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         JButton pvpButton = new JButton("Player vs Player");
-        pvpButton.setFont(Theme.FONT_BUTTON);
-        pvpButton.setBounds(100, 250, 260, 60);
         styleButton(pvpButton);
         pvpButton.addActionListener(e -> {
-            gameMain.startNewGame(GameMain.GameMode.PLAYER_VS_PLAYER); // Diubah dari GamePanel
+            gameMain.startNewGame(GameMain.GameMode.PLAYER_VS_PLAYER);
             cardLayout.show(mainPanel, "GAME");
         });
 
-        // Tombol Player vs AI
+        // Panel untuk Player vs AI dan pilihan kesulitan
+        JPanel pvaPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        pvaPanel.setOpaque(false);
+
         JButton pvaButton = new JButton("Player vs AI");
-        pvaButton.setFont(Theme.FONT_BUTTON);
-        pvaButton.setBounds(100, 330, 260, 60);
         styleButton(pvaButton);
+
+        String[] difficulties = { "Easy", "Medium", "Hard" };
+        difficultySelector = new JComboBox<>(difficulties);
+        difficultySelector.setSelectedIndex(2);
+        difficultySelector.setFont(Theme.FONT_STATUS);
+
+        pvaPanel.add(pvaButton);
+        pvaPanel.add(difficultySelector);
+
         pvaButton.addActionListener(e -> {
-            gameMain.startNewGame(GameMain.GameMode.PLAYER_VS_AI); // Diubah dari GamePanel
+            String selected = (String) difficultySelector.getSelectedItem();
+            GameMain.Difficulty diff = GameMain.Difficulty.HARD;
+            if ("Easy".equals(selected)) diff = GameMain.Difficulty.EASY;
+            if ("Medium".equals(selected)) diff = GameMain.Difficulty.MEDIUM;
+
+            gameMain.setDifficulty(diff);
+            gameMain.startNewGame(GameMain.GameMode.PLAYER_VS_AI);
             cardLayout.show(mainPanel, "GAME");
         });
 
-        add(pvpButton);
-        add(pvaButton);
+        JButton leaderboardButton = new JButton("Leaderboard");
+        styleButton(leaderboardButton);
+        leaderboardButton.addActionListener(e -> {
+            if (leaderboardPanel != null) {
+                leaderboardPanel.refreshLeaderboard();
+                cardLayout.show(mainPanel, "LEADERBOARD");
+            }
+        });
+
+        contentPanel.add(titleLabel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 50)));
+        contentPanel.add(pvpButton);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        contentPanel.add(pvaPanel); // Tambahkan panel gabungan
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        contentPanel.add(leaderboardButton);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        add(contentPanel, gbc);
     }
 
     private void styleButton(JButton button) {
+        button.setFont(Theme.FONT_BUTTON);
         button.setForeground(Theme.TEXT_LIGHT);
         button.setBackground(Theme.BG_PANEL);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createLineBorder(Theme.GRID, 2));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        Dimension buttonSize = new Dimension(280, 65);
+        if (button.getText().equals("Player vs AI")) {
+            buttonSize = new Dimension(200, 65); // Perkecil tombol PvA
+        }
+        button.setPreferredSize(buttonSize);
+        button.setMinimumSize(buttonSize);
+        button.setMaximumSize(buttonSize);
 
-        // Efek hover untuk tombol
         button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent evt) {
-                button.setBackground(Theme.NOUGHT);
-            }
-            public void mouseExited(MouseEvent evt) {
-                button.setBackground(Theme.BG_PANEL);
-            }
+            public void mouseEntered(MouseEvent evt) { button.setBackground(Theme.NOUGHT); }
+            public void mouseExited(MouseEvent evt) { button.setBackground(Theme.BG_PANEL); }
         });
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-        // Gambar Judul
-        g2d.setFont(Theme.FONT_TITLE);
-        g2d.setColor(Theme.TEXT_LIGHT);
-        FontMetrics fm = g2d.getFontMetrics();
-        int titleWidth = fm.stringWidth("Tic Tac Toe");
-        g2d.drawString("Tic Tac Toe", (getWidth() - titleWidth) / 2, 150);
     }
 }

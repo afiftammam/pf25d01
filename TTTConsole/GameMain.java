@@ -9,45 +9,96 @@ import java.awt.event.MouseMotionAdapter;
 public class GameMain extends JPanel {
 
     public enum GameMode { PLAYER_VS_PLAYER, PLAYER_VS_AI }
+    public enum Difficulty { EASY, MEDIUM, HARD }
 
     private Board board;
     private State currentState;
     private Seed currentPlayer;
     private GameMode gameMode;
+    private Difficulty currentDifficulty = Difficulty.HARD;
 
-    private int scoreX = 0;
-    private int scoreO = 0;
     private String nameX = "Player X";
     private String nameO = "Player O";
 
-    private Point mousePos; // Untuk efek hover
+    private Point mousePos;
 
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
+    private final AIPlayer aiPlayer;
+    private final DatabaseManager dbManager;
 
-    public GameMain(JPanel mainPanel, CardLayout cardLayout) {
+    // --- TOMBOL BARU DIDEKLARASIKAN DI SINI ---
+    private JButton playAgainButton;
+
+    public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
-        this.board = new Board(this); // Beri referensi panel ini ke board
+        this.dbManager = dbManager;
+        this.board = new Board(this);
+        this.aiPlayer = new AIPlayer();
 
+        setLayout(new BorderLayout());
         setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT + 70));
         setBackground(Theme.BG_MAIN);
-        setLayout(new BorderLayout());
 
-        addMouseListeners();
+        JPanel gameBoardPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                setBackground(Theme.BG_MAIN);
+                board.paint((Graphics2D) g);
+                paintHoverEffect((Graphics2D) g);
+            }
+        };
+        gameBoardPanel.setPreferredSize(new Dimension(Board.CANVAS_WIDTH, Board.CANVAS_HEIGHT));
+        add(gameBoardPanel, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout(20, 0));
+        bottomPanel.setOpaque(false);
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        JButton backButton = new JButton("Back to Menu");
+        backButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        backButton.setBackground(Theme.BG_PANEL);
+        backButton.setForeground(Theme.TEXT_LIGHT);
+        backButton.addActionListener(e -> handleBackButton());
+        bottomPanel.add(backButton, BorderLayout.WEST);
+
+        // --- INISIALISASI DAN STYLE TOMBOL PLAY AGAIN ---
+        playAgainButton = new JButton("Play Again");
+        playAgainButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        playAgainButton.setBackground(Theme.WIN_LINE); // Warna yang menarik perhatian
+        playAgainButton.setForeground(Theme.BG_MAIN);
+        playAgainButton.setVisible(false); // Sembunyikan di awal
+        playAgainButton.addActionListener(e -> resetGame());
+        bottomPanel.add(playAgainButton, BorderLayout.EAST); // Tambahkan ke sisi kanan
+
+        JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
+        statusLabel.setFont(Theme.FONT_STATUS);
+        statusLabel.setForeground(Theme.TEXT_LIGHT);
+        bottomPanel.add(statusLabel, BorderLayout.CENTER);
+
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        SoundEffect.initGame();
+        addMouseListeners(gameBoardPanel);
+    }
+
+    public void setDifficulty(Difficulty difficulty) {
+        this.currentDifficulty = difficulty;
     }
 
     public void startNewGame(GameMode mode) {
         this.gameMode = mode;
-        this.scoreX = 0;
-        this.scoreO = 0;
         resetGame();
     }
 
     private void resetGame() {
         board.newGame();
-        currentPlayer = Seed.CROSS;
+        playAgainButton.setVisible(false); // Sembunyikan tombol saat game baru dimulai
         currentState = State.PLAYING;
+        currentPlayer = Seed.CROSS;
+
         nameX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
         if (nameX == null || nameX.trim().isEmpty()) nameX = "Player X";
 
@@ -55,65 +106,62 @@ public class GameMain extends JPanel {
             nameO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
             if (nameO == null || nameO.trim().isEmpty()) nameO = "Player O";
         } else {
-            nameO = "Skynet AI";
+            nameO = "Skynet AI (" + currentDifficulty.name() + ")";
         }
         repaint();
     }
 
-    private void addMouseListeners() {
-        addMouseListener(new MouseAdapter() {
+    private void addMouseListeners(JPanel targetPanel) {
+        targetPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getY() > Board.CANVAS_HEIGHT) return; // Abaikan klik di status bar
-
+                // Hapus logika lama untuk restart game dari sini.
+                // Klik di papan hanya berfungsi saat permainan sedang berlangsung.
                 if (currentState == State.PLAYING) {
                     if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
-
                     int row = e.getY() / Cell.SIZE;
                     int col = e.getX() / Cell.SIZE;
-
                     if (board.isValidMove(row, col)) {
                         updateGame(currentPlayer, row, col);
                     }
-                } else {
-                    // Jika game selesai, klik di mana saja akan memulai ronde baru
-                    resetGame();
                 }
             }
         });
 
-        addMouseMotionListener(new MouseMotionAdapter() {
+        targetPanel.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
                 mousePos = e.getPoint();
-                repaint(); // Perlu repaint untuk menggambar efek hover
+                repaint();
             }
         });
     }
 
     private void updateGame(Seed player, int row, int col) {
         board.placeSeed(player, row, col);
+        SoundEffect.EAT_FOOD.play();
         currentState = board.checkGameState(player, row, col);
-
         if (currentState == State.PLAYING) {
             currentPlayer = (currentPlayer == Seed.CROSS) ? Seed.NOUGHT : Seed.CROSS;
             if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
                 triggerAIMove();
             }
         } else {
-            // Update skor jika ada pemenang
-            if(currentState == State.CROSS_WON) scoreX++;
-            if(currentState == State.NOUGHT_WON) scoreO++;
-            board.startWinAnimation(); // Mulai animasi garis kemenangan
+            // --- MUNCULKAN TOMBOL PLAY AGAIN SAAT GAME SELESAI ---
+            playAgainButton.setVisible(true);
+
+            if (currentState == State.CROSS_WON || currentState == State.NOUGHT_WON) SoundEffect.EXPLODE.play();
+            else if (currentState == State.DRAW) SoundEffect.DIE.play();
+            if (dbManager != null) handleDatabaseUpdate();
+            board.startWinAnimation();
         }
         repaint();
     }
 
     private void triggerAIMove() {
-        // Timer untuk AI "berpikir"
         Timer timer = new Timer(500, e -> {
-            int[] move = board.findBestMove();
-            if (move != null) {
+            int[] move = aiPlayer.findBestMove(this.board, this.currentDifficulty);
+            if (move != null && move[0] != -1) {
                 updateGame(Seed.NOUGHT, move[0], move[1]);
             }
         });
@@ -121,20 +169,31 @@ public class GameMain extends JPanel {
         timer.start();
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    private void handleBackButton() {
+        if (currentState == State.PLAYING) {
+            int response = JOptionPane.showConfirmDialog(
+                    this, "Are you sure you want to quit? The current game will be lost.", "Quit Game",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (response == JOptionPane.NO_OPTION) return;
+        }
+        cardLayout.show(mainPanel, "MENU");
+    }
 
-        board.paint(g2d);
-        paintStatusBar(g2d);
-        paintHoverEffect(g2d);
+    private void handleDatabaseUpdate() {
+        if (currentState == State.CROSS_WON) {
+            dbManager.updatePlayerStats(nameX, State.CROSS_WON);
+            dbManager.updatePlayerStats(nameO, State.PLAYING);
+        } else if (currentState == State.NOUGHT_WON) {
+            dbManager.updatePlayerStats(nameO, State.NOUGHT_WON);
+            dbManager.updatePlayerStats(nameX, State.PLAYING);
+        } else if (currentState == State.DRAW) {
+            dbManager.updatePlayerStats(nameX, State.DRAW);
+            dbManager.updatePlayerStats(nameO, State.DRAW);
+        }
     }
 
     private void paintHoverEffect(Graphics2D g2d) {
         if (mousePos != null && currentState == State.PLAYING) {
-            if (mousePos.y > Board.CANVAS_HEIGHT) return;
             int row = mousePos.y / Cell.SIZE;
             int col = mousePos.x / Cell.SIZE;
             if (board.isValidMove(row, col)) {
@@ -144,10 +203,11 @@ public class GameMain extends JPanel {
         }
     }
 
-    private void paintStatusBar(Graphics2D g2d) {
-        g2d.setFont(Theme.FONT_STATUS);
-        g2d.setColor(Theme.TEXT_LIGHT);
-
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        JPanel bottomPanel = (JPanel) getComponent(1);
+        JLabel statusLabel = (JLabel) bottomPanel.getComponent(2); // Indeks label sekarang 2
         String status;
         if (currentState == State.PLAYING) {
             status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
@@ -158,14 +218,6 @@ public class GameMain extends JPanel {
         } else {
             status = "It's a Draw!";
         }
-
-        FontMetrics fm = g2d.getFontMetrics();
-        int statusWidth = fm.stringWidth(status);
-        g2d.drawString(status, (Board.CANVAS_WIDTH - statusWidth) / 2, Board.CANVAS_HEIGHT + 45);
-
-        // Gambar skor
-        g2d.drawString(nameX + ": " + scoreX, 20, Board.CANVAS_HEIGHT + 45);
-        int nameOWidth = fm.stringWidth(nameO + ": " + scoreO);
-        g2d.drawString(nameO + ": " + scoreO, Board.CANVAS_WIDTH - nameOWidth - 20, Board.CANVAS_HEIGHT + 45);
+        statusLabel.setText(status);
     }
 }

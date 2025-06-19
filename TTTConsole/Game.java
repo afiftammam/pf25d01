@@ -3,6 +3,10 @@ package TTTConsole;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Kelas utama yang menjalankan seluruh permainan.
+ * Menginisialisasi frame, panel utama dengan CardLayout, dan semua komponen lainnya.
+ */
 public class Game {
     public static void main(String[] args) {
         // Jalankan di Event Dispatch Thread untuk thread-safety Swing
@@ -11,20 +15,26 @@ public class Game {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);
 
-            // CardLayout untuk beralih antar panel (menu dan game)
+            // CardLayout untuk beralih antar panel (menu, game, dan leaderboard)
             CardLayout cardLayout = new CardLayout();
             JPanel mainPanel = new JPanel(cardLayout);
 
+            // Inisialisasi DatabaseManager
+            DatabaseManager dbManager = new DatabaseManager();
+
             // Buat instance dari setiap panel
             MainMenuPanel mainMenu = new MainMenuPanel(mainPanel, cardLayout);
-            GameMain gameMain = new GameMain(mainPanel, cardLayout); // Diubah dari GamePanel
+            GameMain gameMain = new GameMain(mainPanel, cardLayout, dbManager);
+            LeaderboardPanel leaderboardPanel = new LeaderboardPanel(mainPanel, cardLayout, dbManager);
 
-            // Tambahkan panel ke CardLayout
+            // Tambahkan panel ke CardLayout dengan nama yang unik
             mainPanel.add(mainMenu, "MENU");
-            mainPanel.add(gameMain, "GAME"); // Diubah dari GamePanel
+            mainPanel.add(gameMain, "GAME");
+            mainPanel.add(leaderboardPanel, "LEADERBOARD");
 
-            // Berikan referensi gameMain ke mainMenu agar bisa memulai game
-            mainMenu.setGamePanel(gameMain); // Diubah dari GamePanel
+            // Berikan referensi panel ke mainMenu agar bisa saling berinteraksi
+            mainMenu.setGamePanel(gameMain);
+            mainMenu.setLeaderboardPanel(leaderboardPanel);
 
             frame.add(mainPanel);
             frame.pack();
