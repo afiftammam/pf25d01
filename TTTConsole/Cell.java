@@ -1,14 +1,10 @@
 package TTTConsole;
 
-
 import java.awt.*;
 
 public class Cell {
-    // Definisi konstanta untuk menggambar
-    public static final int SIZE = 120; // lebar/tinggi sel (persegi)
-    public static final int PADDING = SIZE / 5;
-    public static final int SEED_SIZE = SIZE - PADDING * 2;
-    public static final int SEED_STROKE_WIDTH = 8; // lebar goresan pena
+    public static final int SIZE = 140; // Ukuran sel diperbesar untuk tampilan lebih baik
+    private static final int PADDING = 25;
 
     Seed content;
     int row, col;
@@ -16,29 +12,30 @@ public class Cell {
     public Cell(int row, int col) {
         this.row = row;
         this.col = col;
-        newGame();
+        content = Seed.NO_SEED;
     }
 
     public void newGame() {
         content = Seed.NO_SEED;
     }
 
-    public void paint(Graphics g) {
-        Graphics2D g2d = (Graphics2D)g;
-        g2d.setStroke(new BasicStroke(SEED_STROKE_WIDTH,
-                BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+    public void paint(Graphics2D g2d) {
+        int x = col * SIZE;
+        int y = row * SIZE;
 
-        int x1 = col * SIZE + PADDING;
-        int y1 = row * SIZE + PADDING;
+        // Gambar latar belakang sel
+        g2d.setColor(Theme.BG_PANEL);
+        g2d.fillRect(x, y, SIZE, SIZE);
+
+        // Gambar X atau O
+        g2d.setStroke(new BasicStroke(10, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         if (content == Seed.CROSS) {
-            g2d.setColor(GameMain.COLOR_CROSS);
-            int x2 = (col + 1) * SIZE - PADDING;
-            int y2 = (row + 1) * SIZE - PADDING;
-            g2d.drawLine(x1, y1, x2, y2);
-            g2d.drawLine(x2, y1, x1, y2);
+            g2d.setColor(Theme.CROSS);
+            g2d.drawLine(x + PADDING, y + PADDING, x + SIZE - PADDING, y + SIZE - PADDING);
+            g2d.drawLine(x + SIZE - PADDING, y + PADDING, x + PADDING, y + SIZE - PADDING);
         } else if (content == Seed.NOUGHT) {
-            g2d.setColor(GameMain.COLOR_NOUGHT);
-            g2d.drawOval(x1, y1, SEED_SIZE, SEED_SIZE);
+            g2d.setColor(Theme.NOUGHT);
+            g2d.drawOval(x + PADDING, y + PADDING, SIZE - 2 * PADDING, SIZE - 2 * PADDING);
         }
     }
 }
