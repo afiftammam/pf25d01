@@ -138,7 +138,7 @@ public class AIPlayer {
                         bestScore = Math.min(score, bestScore);
                     }
                 }
-            }
+            } //akhtar
             return bestScore;
         }
     }
