@@ -34,6 +34,7 @@ public class GameMain extends JPanel {
 
     private JButton playAgainButton;
     private JPanel gameBoardPanel;
+    private JLabel statusLabel;
 
     public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
@@ -73,7 +74,7 @@ public class GameMain extends JPanel {
         playAgainButton.addActionListener(e -> resetGame());
         bottomPanel.add(playAgainButton, BorderLayout.EAST);
 
-        JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
+        statusLabel = new JLabel(" ", SwingConstants.CENTER);
         statusLabel.setFont(Theme.FONT_STATUS);
         statusLabel.setForeground(Theme.TEXT_LIGHT);
         bottomPanel.add(statusLabel, BorderLayout.CENTER);
@@ -124,6 +125,7 @@ public class GameMain extends JPanel {
         playAgainButton.setVisible(false);
         currentState = State.PLAYING;
         currentPlayer = Seed.CROSS;
+        updateStatusLabel();
 
         if (isFirstGame) {
             String inputX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
@@ -159,21 +161,14 @@ public class GameMain extends JPanel {
         targetPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("Mouse diklik pada papan di (" + e.getX() + ", " + e.getY() + "). Status game saat ini: " + currentState);
-
                 if (currentState == State.PLAYING) {
-                    System.out.println("Memproses langkah permainan...");
                     if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
-                        System.out.println("Klik diabaikan, ini giliran AI.");
                         return;
                     }
                     int row = e.getY() / Board.CELL_SIZE;
                     int col = e.getX() / Board.CELL_SIZE;
                     if (board.isValidMove(row, col)) {
-                        System.out.println("Langkah valid di (" + row + ", " + col + "). Memperbarui game.");
                         updateGame(currentPlayer, row, col);
-                    } else {
-                        System.out.println("Langkah tidak valid.");
                     }
                 }
             }
@@ -208,7 +203,23 @@ public class GameMain extends JPanel {
             else if (currentState == State.DRAW) SoundEffect.DIE.play();
             if (dbManager != null) handleDatabaseUpdate();
             board.startWinAnimation();
+
+            String message;
+            if (currentState == State.CROSS_WON) {
+                message = nameX + " Wins!";
+            } else if (currentState == State.NOUGHT_WON) {
+                message = nameO + " Wins!";
+            } else {
+                message = "It's a Draw!";
+            }
+
+            Timer popupTimer = new Timer(500, e -> {
+                JOptionPane.showMessageDialog(this, message, "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            });
+            popupTimer.setRepeats(false);
+            popupTimer.start();
         }
+        updateStatusLabel();
         repaint();
     }
 
@@ -260,27 +271,25 @@ public class GameMain extends JPanel {
         }
     }
 
+    private void updateStatusLabel() {
+        String status;
+        if (currentState == State.PLAYING) {
+            status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
+        } else if (currentState == State.CROSS_WON) {
+            status = nameX + " Wins!";
+        } else if (currentState == State.NOUGHT_WON) {
+            status = nameO + " Wins!";
+        } else if (currentState == State.DRAW){
+            status = "It's a Draw!";
+        } else {
+            status = " ";
+        }
+        statusLabel.setText(status);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        if (getComponentCount() > 1 && getComponent(1) instanceof JPanel) {
-            JPanel bottomPanel = (JPanel) getComponent(1);
-            if (bottomPanel.getComponentCount() > 2 && bottomPanel.getComponent(2) instanceof JLabel) {
-                JLabel statusLabel = (JLabel) bottomPanel.getComponent(2);
-                String status;
-                if (currentState == State.PLAYING) {
-                    status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
-                } else if (currentState == State.CROSS_WON) {
-                    status = nameX + " Wins!";
-                } else if (currentState == State.NOUGHT_WON) {
-                    status = nameO + " Wins!";
-                } else if (currentState == State.DRAW){
-                    status = "It's a Draw!";
-                } else {
-                    status = " ";
-                }
-                statusLabel.setText(status);
-            }
-        }
+        updateStatusLabel();
     }
 }
