@@ -230,6 +230,7 @@ public class GameMain extends JPanel {
             dbManager.updatePlayerStats(nameX, State.DRAW);
             dbManager.updatePlayerStats(nameO, State.DRAW);
         }
+
     }
 
     private void paintHoverEffect(Graphics2D g2d) {
@@ -267,3 +268,4 @@ public class GameMain extends JPanel {
         }
     }
 }
+

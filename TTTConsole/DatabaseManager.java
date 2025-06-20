@@ -5,38 +5,25 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 
-/**
- * Kelas ini bertanggung jawab untuk semua interaksi dengan database MySQL.
- * Termasuk menghubungkan, membuat tabel, mengambil dan menyimpan data pemain.
- * Versi ini diperbarui untuk koneksi ke database Aiven.
- */
 public class DatabaseManager {
 
-    // --- Konfigurasi Database (Aiven Cloud) ---
     private static final String DB_HOST = "mysql-dasprogfinal-akhtar-dasprofinal.f.aivencloud.com";
     private static final String DB_PORT = "28538";
-    private static final String DB_NAME = "Finaldasprog"; // PASTIKAN NAMA INI BENAR
+    private static final String DB_NAME = "Finaldasprog";
     private static final String DB_USER = "avnadmin";
     private static final String DB_PASSWORD = "AVNS_HBkzd0HRku5PSOY_2Gt";
 
-    // URL Koneksi JDBC dengan mode SSL yang diperlukan untuk Aiven
     private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?sslmode=require";
 
     private Connection connection;
 
-    /**
-     * Konstruktor akan mencoba untuk terhubung ke database dan membuat tabel jika belum ada.
-     */
     public DatabaseManager() {
         try {
-            // Membuat koneksi ke database
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
             System.out.println("Koneksi database Aiven berhasil.");
-            // Memastikan tabel 'players' ada
             createPlayerTable();
         } catch (SQLException e) {
             System.err.println("Gagal terhubung ke database: " + e.getMessage());
-            // Tampilkan dialog error yang lebih informatif
             JOptionPane.showMessageDialog(null,
                     "Gagal terhubung ke database Aiven.\n" +
                             "Pesan Error: " + e.getMessage() + "\n\n" +
@@ -48,9 +35,6 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Membuat tabel 'players' jika belum ada.
-     */
     private void createPlayerTable() {
         String createTableSQL = "CREATE TABLE IF NOT EXISTS players (" +
                 "username VARCHAR(50) PRIMARY KEY," +
@@ -65,13 +49,9 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Memperbarui statistik pemain setelah permainan selesai.
-     * Jika pemain belum ada di database, data baru akan dibuat.
-     */
     public void updatePlayerStats(String username, State result) {
         if (connection == null || username == null || username.trim().isEmpty() || username.equals("Skynet AI")) {
-            return; // Jangan simpan skor untuk AI atau jika nama tidak valid
+            return;
         }
 
         String query = "INSERT INTO players (username, wins, losses, draws) VALUES (?, ?, ?, ?) " +
@@ -98,9 +78,6 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Mengambil daftar pemain untuk papan peringkat, diurutkan berdasarkan jumlah kemenangan.
-     */
     public List<Player> getLeaderboard() {
         List<Player> players = new ArrayList<>();
         if (connection == null) return players;

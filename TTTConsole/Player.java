@@ -18,10 +18,6 @@ public class Player {
     public int getLosses() { return losses; }
     public int getDraws() { return draws; }
 
-    /**
-     * Metode BARU: Menghitung win rate pemain.
-     * @return Win rate dalam bentuk double (misal: 0.75 untuk 75%).
-     */
     public double getWinRate() {
         int totalGames = wins + losses + draws;
         if (totalGames == 0) {
