@@ -10,8 +10,9 @@ public class MainMenuPanel extends JPanel {
     private final CardLayout cardLayout;
     private GameMain gameMain;
     private LeaderboardPanel leaderboardPanel;
-    private JComboBox<String> difficultySelector;
+
     private JComboBox<String> boardSizeSelector;
+    private JComboBox<GameMain.GameVariant> variantSelector;
 
     public MainMenuPanel(JPanel mainPanel, CardLayout cardLayout) {
         this.mainPanel = mainPanel;
@@ -78,7 +79,7 @@ public class MainMenuPanel extends JPanel {
         titleLabel.setFont(Theme.FONT_TITLE);
         titleLabel.setForeground(Theme.TEXT_LIGHT);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(50, 0, 50, 0));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(40, 0, 40, 0));
         add(titleLabel, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel(new GridBagLayout());
@@ -88,8 +89,39 @@ public class MainMenuPanel extends JPanel {
         gbc.insets = new Insets(10, 0, 10, 0);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        boardSizeSelector = new JComboBox<>(new String[]{"3x3", "4x4"});
+        JPanel optionsPanel = new JPanel(new GridBagLayout());
+        optionsPanel.setOpaque(false);
+        GridBagConstraints gbcOptions = new GridBagConstraints();
+        gbcOptions.insets = new Insets(5, 5, 5, 5);
+        gbcOptions.anchor = GridBagConstraints.WEST;
+
+        gbcOptions.gridx = 0;
+        gbcOptions.gridy = 0;
+        JLabel sizeLabel = new JLabel("Grid Size:");
+        sizeLabel.setFont(Theme.FONT_STATUS);
+        sizeLabel.setForeground(Theme.TEXT_LIGHT);
+        optionsPanel.add(sizeLabel, gbcOptions);
+
+        gbcOptions.gridx = 1;
+        boardSizeSelector = new JComboBox<>(new String[]{"3x3", "5x5", "7x7"});
         boardSizeSelector.setFont(Theme.FONT_STATUS);
+        boardSizeSelector.setBackground(Theme.BG_PANEL);
+        boardSizeSelector.setForeground(Theme.TEXT_LIGHT);
+        optionsPanel.add(boardSizeSelector, gbcOptions);
+
+        gbcOptions.gridx = 0;
+        gbcOptions.gridy = 1;
+        JLabel variantLabel = new JLabel("Game Rules:");
+        variantLabel.setFont(Theme.FONT_STATUS);
+        variantLabel.setForeground(Theme.TEXT_LIGHT);
+        optionsPanel.add(variantLabel, gbcOptions);
+
+        gbcOptions.gridx = 1;
+        variantSelector = new JComboBox<>(GameMain.GameVariant.values());
+        variantSelector.setFont(Theme.FONT_STATUS);
+        variantSelector.setBackground(Theme.BG_PANEL);
+        variantSelector.setForeground(Theme.TEXT_LIGHT);
+        optionsPanel.add(variantSelector, gbcOptions);
 
         JButton pvaButton = new JButton("Play Solo");
         stylePrimaryButton(pvaButton);
@@ -101,12 +133,7 @@ public class MainMenuPanel extends JPanel {
 
         JButton leaderboardButton = new JButton("Leaderboard");
         styleSecondaryButton(leaderboardButton);
-        leaderboardButton.addActionListener(e -> {
-            if (leaderboardPanel != null) {
-                leaderboardPanel.refreshLeaderboard();
-                cardLayout.show(mainPanel, "LEADERBOARD");
-            }
-        });
+        leaderboardButton.addActionListener(e -> cardLayout.show(mainPanel, "LEADERBOARD"));
 
         gbc.gridy = 0;
         buttonPanel.add(pvaButton, gbc);
@@ -117,17 +144,61 @@ public class MainMenuPanel extends JPanel {
         gbc.gridy = 2;
         buttonPanel.add(leaderboardButton, gbc);
 
+        gbc.gridy = 3;
+        gbc.insets = new Insets(20, 0, 10, 0);
+        buttonPanel.add(optionsPanel, gbc);
+
         add(buttonPanel, BorderLayout.CENTER);
     }
 
+    /**
+     * PERBAIKAN: Menambahkan blok try-catch untuk menangkap dan menampilkan error.
+     */
     private void startGame(GameMain.GameMode mode) {
-        String selectedSize = (String) boardSizeSelector.getSelectedItem();
-        int size = "3x3".equals(selectedSize) ? 3 : 4;
+        System.out.println("Tombol diklik untuk mode: " + mode);
+        try {
+            // Pengecekan untuk memastikan objek tidak null
+            if (gameMain == null) {
+                System.err.println("ERROR: Objek gameMain belum diinisialisasi di MainMenuPanel!");
+                return;
+            }
+            if (boardSizeSelector == null || variantSelector == null) {
+                System.err.println("ERROR: JComboBox belum diinisialisasi!");
+                return;
+            }
 
-        GameMain.Difficulty diff = GameMain.Difficulty.HARD;
+            // Mengambil data dari UI
+            String selectedSizeStr = (String) boardSizeSelector.getSelectedItem();
+            GameMain.GameVariant selectedVariant = (GameMain.GameVariant) variantSelector.getSelectedItem();
 
-        gameMain.setDifficulty(diff);
-        gameMain.startNewGame(mode, size);
-        cardLayout.show(mainPanel, "GAME");
+            int size;
+            switch (selectedSizeStr) {
+                case "5x5":
+                    size = 5;
+                    break;
+                case "7x7":
+                    size = 7;
+                    break;
+                case "3x3":
+                default:
+                    size = 3;
+                    break;
+            }
+
+            System.out.println("Memulai game dengan: size=" + size + ", variant=" + selectedVariant);
+
+            // Memulai game
+            gameMain.setDifficulty(GameMain.Difficulty.HARD);
+            gameMain.startNewGame(mode, size, selectedVariant);
+
+            // Berpindah panel
+            cardLayout.show(mainPanel, "GAME");
+            System.out.println("Panel telah diganti ke 'GAME'.");
+
+        } catch (Exception ex) {
+            // Jika terjadi error, tampilkan di konsol
+            System.err.println("Terjadi error saat mencoba memulai game:");
+            ex.printStackTrace();
+        }
     }
 }

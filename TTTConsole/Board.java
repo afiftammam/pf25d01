@@ -25,7 +25,7 @@ public class Board implements Serializable {
         this.gameSurface = surface;
         this.ROWS = size;
         this.COLS = size;
-        this.WIN_STREAK = (size == 3) ? 3 : 4;
+        this.WIN_STREAK = size;
 
         this.CANVAS_WIDTH = CELL_SIZE * COLS;
         this.CANVAS_HEIGHT = CELL_SIZE * ROWS;

@@ -10,12 +10,14 @@ public class GameMain extends JPanel {
 
     public enum GameMode { PLAYER_VS_PLAYER, PLAYER_VS_AI }
     public enum Difficulty { EASY, MEDIUM, HARD }
+    public enum GameVariant { STANDARD, MISERE }
 
     private Board board;
     private State currentState;
     private Seed currentPlayer;
     private GameMode gameMode;
     private Difficulty currentDifficulty = Difficulty.HARD;
+    private GameVariant currentGameVariant = GameVariant.STANDARD;
     private int boardSize = 3;
 
     private String nameX = "Player X";
@@ -82,9 +84,10 @@ public class GameMain extends JPanel {
         this.currentDifficulty = difficulty;
     }
 
-    public void startNewGame(GameMode mode, int size) {
+    public void startNewGame(GameMode mode, int size, GameVariant variant) {
         this.gameMode = mode;
         this.boardSize = size;
+        this.currentGameVariant = variant;
         this.isFirstGame = true;
 
         this.board = new Board(this, size);
@@ -152,16 +155,28 @@ public class GameMain extends JPanel {
         repaint();
     }
 
+    /**
+     * PERBAIKAN: Menambahkan System.out.println untuk debugging mouse click.
+     */
     private void addMouseListeners(JPanel targetPanel) {
         targetPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                System.out.println("Mouse diklik pada papan di (" + e.getX() + ", " + e.getY() + "). Status game saat ini: " + currentState);
+
                 if (currentState == State.PLAYING) {
-                    if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
+                    System.out.println("Memproses langkah permainan...");
+                    if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
+                        System.out.println("Klik diabaikan, ini giliran AI.");
+                        return;
+                    }
                     int row = e.getY() / Board.CELL_SIZE;
                     int col = e.getX() / Board.CELL_SIZE;
                     if (board.isValidMove(row, col)) {
+                        System.out.println("Langkah valid di (" + row + ", " + col + "). Memperbarui game.");
                         updateGame(currentPlayer, row, col);
+                    } else {
+                        System.out.println("Langkah tidak valid.");
                     }
                 }
             }
@@ -180,6 +195,11 @@ public class GameMain extends JPanel {
         board.placeSeed(player, row, col);
         SoundEffect.EAT_FOOD.play();
         currentState = board.checkGameState(player, row, col);
+
+        if (currentGameVariant == GameVariant.MISERE && (currentState == State.CROSS_WON || currentState == State.NOUGHT_WON)) {
+            currentState = (currentState == State.CROSS_WON) ? State.NOUGHT_WON : State.CROSS_WON;
+        }
+
         if (currentState == State.PLAYING) {
             currentPlayer = (currentPlayer == Seed.CROSS) ? Seed.NOUGHT : Seed.CROSS;
             if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
@@ -197,7 +217,7 @@ public class GameMain extends JPanel {
 
     private void triggerAIMove() {
         Timer timer = new Timer(500, e -> {
-            int[] move = aiPlayer.findBestMove(this.board, this.currentDifficulty);
+            int[] move = aiPlayer.findBestMove(this.board, this.currentDifficulty, this.currentGameVariant);
             if (move != null && move[0] != -1) {
                 updateGame(Seed.NOUGHT, move[0], move[1]);
             }
