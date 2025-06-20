@@ -7,23 +7,23 @@ import javax.swing.JOptionPane;
 
 public class DatabaseManager {
 
-    private static final String DB_HOST = "mysql-dasprogfinal-akhtar-dasprofinal.f.aivencloud.com";
-    private static final String DB_PORT = "28538";
-    private static final String DB_NAME = "Finaldasprog";
-    private static final String DB_USER = "avnadmin";
-    private static final String DB_PASSWORD = "AVNS_HBkzd0HRku5PSOY_2Gt";
+    private static final String DB_HOST = "mysql-dasprogfinal-akhtar-dasprofinal.f.aivencloud.com"; //
+    private static final String DB_PORT = "28538"; //
+    private static final String DB_NAME = "Finaldasprog"; //
+    private static final String DB_USER = "avnadmin"; //
+    private static final String DB_PASSWORD = "AVNS_HBkzd0HRku5PSOY_2Gt"; //
 
-    private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?sslmode=require";
+    private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?sslmode=require"; //
 
     private Connection connection;
 
     public DatabaseManager() {
         try {
-            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            System.out.println("Koneksi database Aiven berhasil.");
-            createPlayerTable();
+            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD); //
+            System.out.println("Koneksi database Aiven berhasil."); //
+            createPlayerTable(); //
         } catch (SQLException e) {
-            System.err.println("Gagal terhubung ke database: " + e.getMessage());
+            System.err.println("Gagal terhubung ke database: " + e.getMessage()); //
             JOptionPane.showMessageDialog(null,
                     "Gagal terhubung ke database Aiven.\n" +
                             "Pesan Error: " + e.getMessage() + "\n\n" +
@@ -31,7 +31,7 @@ public class DatabaseManager {
                             "1. Anda memiliki koneksi internet.\n" +
                             "2. Aturan Firewall di Aiven mengizinkan IP Anda.\n" +
                             "3. Detail koneksi (host, port, user, password) sudah benar.",
-                    "Error Database", JOptionPane.ERROR_MESSAGE);
+                    "Error Database", JOptionPane.ERROR_MESSAGE); //
         }
     }
 
@@ -41,16 +41,16 @@ public class DatabaseManager {
                 "wins INT DEFAULT 0," +
                 "losses INT DEFAULT 0," +
                 "draws INT DEFAULT 0" +
-                ");";
+                ");"; //
         try (Statement statement = connection.createStatement()) {
-            statement.execute(createTableSQL);
+            statement.execute(createTableSQL); //
         } catch (SQLException e) {
-            System.err.println("Gagal membuat tabel: " + e.getMessage());
+            System.err.println("Gagal membuat tabel: " + e.getMessage()); //
         }
     }
 
     public void updatePlayerStats(String username, State result) {
-        if (connection == null || username == null || username.trim().isEmpty() || username.equals("Skynet AI")) {
+        if (connection == null || username == null || username.trim().isEmpty() || username.equals("Skynet AI")) { //
             return;
         }
 
@@ -58,31 +58,31 @@ public class DatabaseManager {
                 "ON DUPLICATE KEY UPDATE " +
                 "wins = wins + VALUES(wins), " +
                 "losses = losses + VALUES(losses), " +
-                "draws = draws + VALUES(draws)";
+                "draws = draws + VALUES(draws)"; //
 
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, username);
+            pstmt.setString(1, username); //
 
-            int winIncrement = (result == State.CROSS_WON || result == State.NOUGHT_WON) ? 1 : 0;
-            int drawIncrement = (result == State.DRAW) ? 1 : 0;
-            int lossIncrement = (result != State.CROSS_WON && result != State.NOUGHT_WON && result != State.DRAW) ? 1 : 0;
+            int winIncrement = (result == State.CROSS_WON || result == State.NOUGHT_WON) ? 1 : 0; //
+            int drawIncrement = (result == State.DRAW) ? 1 : 0; //
+            int lossIncrement = (result != State.CROSS_WON && result != State.NOUGHT_WON && result != State.DRAW) ? 1 : 0; //
 
-            pstmt.setInt(2, winIncrement);
-            pstmt.setInt(3, lossIncrement);
-            pstmt.setInt(4, drawIncrement);
+            pstmt.setInt(2, winIncrement); //
+            pstmt.setInt(3, lossIncrement); //
+            pstmt.setInt(4, drawIncrement); //
 
-            pstmt.executeUpdate();
+            pstmt.executeUpdate(); //
 
         } catch (SQLException e) {
-            System.err.println("Gagal memperbarui statistik pemain '" + username + "': " + e.getMessage());
+            System.err.println("Gagal memperbarui statistik pemain '" + username + "': " + e.getMessage()); //
         }
     }
 
     public List<Player> getLeaderboard() {
-        List<Player> players = new ArrayList<>();
-        if (connection == null) return players;
+        List<Player> players = new ArrayList<>(); //
+        if (connection == null) return players; //
 
-        String query = "SELECT username, wins, losses, draws FROM players ORDER BY wins DESC, losses ASC LIMIT 10";
+        String query = "SELECT username, wins, losses, draws FROM players ORDER BY wins DESC, losses ASC LIMIT 10"; //
 
         try (Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery(query)) {
@@ -93,11 +93,11 @@ public class DatabaseManager {
                         rs.getInt("wins"),
                         rs.getInt("losses"),
                         rs.getInt("draws")
-                ));
+                )); //
             }
         } catch (SQLException e) {
-            System.err.println("Gagal mengambil data leaderboard: " + e.getMessage());
+            System.err.println("Gagal mengambil data leaderboard: " + e.getMessage()); //
         }
-        return players;
+        return players; //
     }
 }
