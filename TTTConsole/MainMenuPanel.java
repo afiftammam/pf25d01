@@ -2,132 +2,126 @@ package TTTConsole;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
 
 public class MainMenuPanel extends JPanel {
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
     private GameMain gameMain;
     private LeaderboardPanel leaderboardPanel;
-    private JComboBox<String> difficultySelector;
+
     private JComboBox<String> boardSizeSelector;
+    private JComboBox<GameMain.GameVariant> variantSelector;
+    private JComboBox<GameMain.Difficulty> difficultySelector;
 
     public MainMenuPanel(JPanel mainPanel, CardLayout cardLayout) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
-
-        setPreferredSize(new Dimension(450, 600));
-        setBackground(Theme.BG_MAIN);
         initUI();
     }
 
     public void setGamePanel(GameMain gameMain) { this.gameMain = gameMain; }
     public void setLeaderboardPanel(LeaderboardPanel leaderboardPanel) { this.leaderboardPanel = leaderboardPanel; }
 
-    private void stylePrimaryButton(JButton button) {
-        button.setFont(Theme.FONT_BUTTON);
-        button.setBackground(Theme.ACCENT_COLOR);
-        button.setForeground(Theme.TEXT_DARK);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createEmptyBorder(15, 25, 15, 25));
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        Dimension buttonSize = new Dimension(320, 65);
-        button.setPreferredSize(buttonSize);
-        button.setMinimumSize(buttonSize);
-        button.setMaximumSize(buttonSize);
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent evt) {
-                button.setBackground(Theme.ACCENT_COLOR.brighter());
-            }
-            public void mouseExited(MouseEvent evt) {
-                button.setBackground(Theme.ACCENT_COLOR);
-            }
-        });
-    }
-
-    private void styleSecondaryButton(JButton button) {
-        button.setFont(Theme.FONT_BUTTON);
-        button.setBackground(Theme.BG_PANEL);
-        button.setForeground(Theme.TEXT_LIGHT);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        Dimension buttonSize = new Dimension(320, 65);
-        button.setPreferredSize(buttonSize);
-        button.setMinimumSize(buttonSize);
-        button.setMaximumSize(buttonSize);
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent evt) {
-                button.setBackground(Theme.BG_PANEL.brighter());
-            }
-            public void mouseExited(MouseEvent evt) {
-                button.setBackground(Theme.BG_PANEL);
-            }
-        });
-    }
-
     private void initUI() {
         setLayout(new BorderLayout());
+        setOpaque(false);
 
+        // Judul
         JLabel titleLabel = new JLabel("Tic-Tac-Toe");
         titleLabel.setFont(Theme.FONT_TITLE);
-        titleLabel.setForeground(Theme.TEXT_LIGHT);
+        titleLabel.setForeground(Theme.textLight);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(50, 0, 50, 0));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(40, 0, 20, 0));
         add(titleLabel, BorderLayout.NORTH);
 
-        JPanel buttonPanel = new JPanel(new GridBagLayout());
-        buttonPanel.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.insets = new Insets(10, 0, 10, 0);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        // Panel Tengah untuk semua tombol dan opsi
+        JPanel centerPanel = new JPanel();
+        centerPanel.setOpaque(false);
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        boardSizeSelector = new JComboBox<>(new String[]{"3x3", "4x4"});
-        boardSizeSelector.setFont(Theme.FONT_STATUS);
+        // Tambahkan Tombol
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(createStyledButton("Play Solo", e -> startGame(GameMain.GameMode.PLAYER_VS_AI), true));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        centerPanel.add(createStyledButton("Play with a Friend", e -> startGame(GameMain.GameMode.PLAYER_VS_PLAYER), true));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        centerPanel.add(createStyledButton("Leaderboard", e -> cardLayout.show(mainPanel, "LEADERBOARD"), false));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        centerPanel.add(createStyledButton("Settings", e -> cardLayout.show(mainPanel, "SETTINGS"), false));
+        centerPanel.add(Box.createVerticalGlue());
 
-        JButton pvaButton = new JButton("Play Solo");
-        stylePrimaryButton(pvaButton);
-        pvaButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_AI));
+        add(centerPanel, BorderLayout.CENTER);
 
-        JButton pvpButton = new JButton("Play with a friend");
-        stylePrimaryButton(pvpButton);
-        pvpButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_PLAYER));
+        // Panel Bawah untuk Opsi
+        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
+        optionsPanel.setOpaque(false);
+        optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        JButton leaderboardButton = new JButton("Leaderboard");
-        styleSecondaryButton(leaderboardButton);
-        leaderboardButton.addActionListener(e -> {
-            if (leaderboardPanel != null) {
-                leaderboardPanel.refreshLeaderboard();
-                cardLayout.show(mainPanel, "LEADERBOARD");
+        boardSizeSelector = new JComboBox<>(new String[]{"3x3", "5x5", "7x7"});
+        variantSelector = new JComboBox<>(GameMain.GameVariant.values());
+        difficultySelector = new JComboBox<>(GameMain.Difficulty.values());
+        difficultySelector.setSelectedItem(GameMain.Difficulty.HARD);
+
+        optionsPanel.add(new JLabel("Grid:"));
+        optionsPanel.add(boardSizeSelector);
+        optionsPanel.add(new JLabel("Rules:"));
+        optionsPanel.add(variantSelector);
+        optionsPanel.add(new JLabel("AI:"));
+        optionsPanel.add(difficultySelector);
+
+        // Style label di optionsPanel
+        for(Component comp : optionsPanel.getComponents()) {
+            if (comp instanceof JLabel) {
+                comp.setForeground(Theme.textLight);
+                comp.setFont(Theme.FONT_STATUS.deriveFont(14f));
             }
-        });
+        }
 
-        gbc.gridy = 0;
-        buttonPanel.add(pvaButton, gbc);
+        add(optionsPanel, BorderLayout.SOUTH);
+    }
 
-        gbc.gridy = 1;
-        buttonPanel.add(pvpButton, gbc);
+    private JButton createStyledButton(String text, ActionListener listener, boolean isPrimary) {
+        JButton button = new JButton(text);
+        button.addActionListener(listener);
+        button.setFont(Theme.FONT_BUTTON);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        gbc.gridy = 2;
-        buttonPanel.add(leaderboardButton, gbc);
+        Dimension buttonSize = new Dimension(320, 65);
+        button.setPreferredSize(buttonSize);
+        button.setMinimumSize(buttonSize);
+        button.setMaximumSize(buttonSize);
 
-        add(buttonPanel, BorderLayout.CENTER);
+        if (isPrimary) {
+            button.setBackground(Theme.accentColor);
+            button.setForeground(Theme.textDark);
+            button.setBorder(BorderFactory.createEmptyBorder());
+        } else {
+            button.setBackground(Theme.bgPanel);
+            button.setForeground(Theme.textLight);
+            button.setBorder(BorderFactory.createLineBorder(Theme.accentColor, 2));
+        }
+        return button;
     }
 
     private void startGame(GameMain.GameMode mode) {
-        String selectedSize = (String) boardSizeSelector.getSelectedItem();
-        int size = "3x3".equals(selectedSize) ? 3 : 4;
+        try {
+            String selectedSizeStr = (String) boardSizeSelector.getSelectedItem();
+            int size = "3x3".equals(selectedSizeStr) ? 3 : ("5x5".equals(selectedSizeStr) ? 5 : 7);
 
-        GameMain.Difficulty diff = GameMain.Difficulty.HARD;
+            GameMain.GameVariant selectedVariant = (GameMain.GameVariant) variantSelector.getSelectedItem();
+            GameMain.Difficulty selectedDifficulty = (GameMain.Difficulty) difficultySelector.getSelectedItem();
 
-        gameMain.setDifficulty(diff);
-        gameMain.startNewGame(mode, size);
-        cardLayout.show(mainPanel, "GAME");
+            gameMain.setDifficulty(selectedDifficulty);
+            gameMain.startNewGame(mode, size, selectedVariant);
+
+            cardLayout.show(mainPanel, "GAME");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memulai game:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

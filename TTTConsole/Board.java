@@ -25,7 +25,7 @@ public class Board implements Serializable {
         this.gameSurface = surface;
         this.ROWS = size;
         this.COLS = size;
-        this.WIN_STREAK = (size == 3) ? 3 : 4;
+        this.WIN_STREAK = size; // Aturan kemenangan dinamis (3x3 butuh 3, 5x5 butuh 5, dst.)
 
         this.CANVAS_WIDTH = CELL_SIZE * COLS;
         this.CANVAS_HEIGHT = CELL_SIZE * ROWS;
@@ -84,6 +84,9 @@ public class Board implements Serializable {
 
     private boolean checkLine(int r, int c, int dr, int dc, Seed p) {
         int count = 1;
+        int startR = r, startC = c;
+
+        // Hitung ke satu arah
         for (int i = 1; i < WIN_STREAK; i++) {
             int nr = r + i * dr;
             int nc = c + i * dc;
@@ -93,25 +96,25 @@ public class Board implements Serializable {
                 break;
             }
         }
+
+        // Hitung ke arah berlawanan
         for (int i = 1; i < WIN_STREAK; i++) {
             int nr = r - i * dr;
             int nc = c - i * dc;
             if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == p) {
                 count++;
+                startR = nr; // Simpan titik awal dari garis kemenangan
+                startC = nc;
             } else {
                 break;
             }
         }
 
         if (count >= WIN_STREAK) {
-            int r1 = r - (WIN_STREAK - 1) * dr;
-            int c1 = c - (WIN_STREAK - 1) * dc;
-            while(r1 < 0 || r1 >= ROWS || c1 < 0 || c1 >= COLS || cells[r1][c1].content != p) {
-                r1 += dr; c1 += dc;
-            }
-            int r2 = r1 + (WIN_STREAK - 1) * dr;
-            int c2 = c1 + (WIN_STREAK - 1) * dc;
-            winningLineCoords = new int[]{r1, c1, r2, c2};
+            // Tentukan koordinat garis kemenangan dari awal sampai akhir
+            int endR = startR + (WIN_STREAK - 1) * dr;
+            int endC = startC + (WIN_STREAK - 1) * dc;
+            winningLineCoords = new int[]{startR, startC, endR, endC};
             return true;
         }
         return false;
@@ -125,8 +128,13 @@ public class Board implements Serializable {
                 return false;
             }
         }
+        // Jika loop selesai, berarti ada garis kemenangan
+        int endR = r + (WIN_STREAK - 1) * dr;
+        int endC = c + (WIN_STREAK - 1) * dc;
+        winningLineCoords = new int[]{r, c, endR, endC};
         return true;
     }
+
 
     public void newGame() {
         for (int r = 0; r < ROWS; r++) {
@@ -183,7 +191,7 @@ public class Board implements Serializable {
         }
 
         if (winningLineCoords != null) {
-            g2d.setColor(Theme.WIN_LINE);
+            g2d.setColor(Theme.WIN_LINE_COLOR); // Menggunakan variabel tema yang benar
             g2d.setStroke(new BasicStroke(12, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
             int x1 = winningLineCoords[1] * CELL_SIZE + CELL_SIZE / 2;
