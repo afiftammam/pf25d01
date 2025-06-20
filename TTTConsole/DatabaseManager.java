@@ -7,23 +7,28 @@ import javax.swing.JOptionPane;
 
 public class DatabaseManager {
 
+    // --- Konfigurasi Database (Aiven Cloud) ---
     private static final String DB_HOST = "mysql-dasprogfinal-akhtar-dasprofinal.f.aivencloud.com";
     private static final String DB_PORT = "28538";
-    private static final String DB_NAME = "Finaldasprog";
+    private static final String DB_NAME = "Finaldasprog"; // PASTIKAN NAMA INI BENAR
     private static final String DB_USER = "avnadmin";
     private static final String DB_PASSWORD = "AVNS_HBkzd0HRku5PSOY_2Gt";
 
+    // URL Koneksi JDBC dengan mode SSL yang diperlukan untuk Aiven
     private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?sslmode=require";
 
     private Connection connection;
 
     public DatabaseManager() {
         try {
+            // Membuat koneksi ke database
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
             System.out.println("Koneksi database Aiven berhasil.");
+            // Memastikan tabel 'players' ada
             createPlayerTable();
         } catch (SQLException e) {
             System.err.println("Gagal terhubung ke database: " + e.getMessage());
+            // Tampilkan dialog error yang lebih informatif
             JOptionPane.showMessageDialog(null,
                     "Gagal terhubung ke database Aiven.\n" +
                             "Pesan Error: " + e.getMessage() + "\n\n" +
@@ -51,7 +56,7 @@ public class DatabaseManager {
 
     public void updatePlayerStats(String username, State result) {
         if (connection == null || username == null || username.trim().isEmpty() || username.equals("Skynet AI")) {
-            return;
+            return; // Jangan simpan skor untuk AI atau jika nama tidak valid
         }
 
         String query = "INSERT INTO players (username, wins, losses, draws) VALUES (?, ?, ?, ?) " +
