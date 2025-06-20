@@ -2,99 +2,78 @@ package TTTConsole;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
 
 public class SettingsPanel extends JPanel {
+
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
-    private final JFrame mainFrame; // Referensi ke frame utama
+    private final JFrame mainFrame;
 
     public SettingsPanel(JPanel mainPanel, CardLayout cardLayout, JFrame mainFrame) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
         this.mainFrame = mainFrame;
-        initUI();
-    }
 
-    private void initUI() {
-        setLayout(new BorderLayout());
-        setOpaque(false);
+        setLayout(new BorderLayout(20, 20));
+        setBackground(Theme.BG_MAIN);
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Judul
-        JLabel titleLabel = new JLabel("Settings");
+        JLabel titleLabel = new JLabel("Settings", SwingConstants.CENTER);
         titleLabel.setFont(Theme.FONT_TITLE);
-        titleLabel.setForeground(Theme.textLight);
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(40, 0, 40, 0));
+        titleLabel.setForeground(Theme.TEXT_LIGHT);
         add(titleLabel, BorderLayout.NORTH);
 
-        // Konten
-        JPanel contentPanel = new JPanel();
-        contentPanel.setOpaque(false);
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        JPanel themePanel = new JPanel();
+        themePanel.setOpaque(false);
+        themePanel.setLayout(new BoxLayout(themePanel, BoxLayout.Y_AXIS));
 
-        JCheckBox muteSoundCheckBox = new JCheckBox("Mute All Sounds");
-        muteSoundCheckBox.setSelected(SoundEffect.volume == SoundEffect.Volume.MUTE);
-        muteSoundCheckBox.addItemListener(e -> {
-            SoundEffect.volume = (e.getStateChange() == ItemEvent.SELECTED) ? SoundEffect.Volume.MUTE : SoundEffect.Volume.LOW;
+        JLabel themeLabel = new JLabel("Select Theme:");
+        themeLabel.setFont(Theme.FONT_STATUS);
+        themeLabel.setForeground(Theme.TEXT_LIGHT);
+        themeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton cyberThemeButton = new JButton("Cyber Theme");
+        styleButton(cyberThemeButton);
+        cyberThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        cyberThemeButton.addActionListener(e -> {
+            Theme.applyCyberTheme();
+            Theme.updateUI(mainFrame);
         });
 
-        JRadioButton darkThemeRadio = new JRadioButton("Cyber Theme (Dark)");
-        darkThemeRadio.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                Theme.applyCyberTheme();
-                Theme.updateUI(mainFrame);
-            }
+        JButton mintThemeButton = new JButton("Mint Theme");
+        styleButton(mintThemeButton);
+        mintThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mintThemeButton.addActionListener(e -> {
+            Theme.applyMintTheme();
+            Theme.updateUI(mainFrame);
         });
 
-        JRadioButton lightThemeRadio = new JRadioButton("Mint Theme (Light)");
-        lightThemeRadio.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                Theme.applyMintTheme();
-                Theme.updateUI(mainFrame);
-            }
-        });
+        themePanel.add(themeLabel);
+        themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        themePanel.add(cyberThemeButton);
+        themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        themePanel.add(mintThemeButton);
 
-        ButtonGroup themeGroup = new ButtonGroup();
-        themeGroup.add(darkThemeRadio);
-        themeGroup.add(lightThemeRadio);
-        darkThemeRadio.setSelected(true); // Default
+        add(themePanel, BorderLayout.CENTER);
 
-        // Style dan tambahkan ke panel
-        styleOption(muteSoundCheckBox);
-        styleOption(darkThemeRadio);
-        styleOption(lightThemeRadio);
-
-        contentPanel.add(muteSoundCheckBox);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        contentPanel.add(new JLabel("UI Theme:"));
-        contentPanel.add(darkThemeRadio);
-        contentPanel.add(lightThemeRadio);
-
-        // Atur agar komponen berada di tengah
-        for(Component c : contentPanel.getComponents()) {
-            ((JComponent)c).setAlignmentX(Component.CENTER_ALIGNMENT);
-            if (c instanceof JLabel) {
-                c.setForeground(Theme.textLight);
-                c.setFont(Theme.FONT_STATUS);
-            }
-        }
-
-        add(contentPanel, BorderLayout.CENTER);
-
-        // Tombol Kembali
         JButton backButton = new JButton("Back to Menu");
+        styleButton(backButton);
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "MENU"));
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottomPanel.setOpaque(false);
         bottomPanel.add(backButton);
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
-    private void styleOption(AbstractButton button) {
-        button.setFont(Theme.FONT_STATUS.deriveFont(18f));
-        button.setForeground(Theme.textLight);
-        button.setOpaque(false);
+    private void styleButton(JButton button) {
+        button.setFont(Theme.FONT_BUTTON);
+        button.setBackground(Theme.BG_PANEL);
+        button.setForeground(Theme.TEXT_LIGHT);
         button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setPreferredSize(new Dimension(280, 65));
+        button.setMaximumSize(new Dimension(280, 65));
     }
 }

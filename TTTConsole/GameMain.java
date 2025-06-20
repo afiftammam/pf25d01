@@ -1,13 +1,10 @@
 package TTTConsole;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseMotionListener;
 
 public class GameMain extends JPanel {
 
@@ -18,98 +15,74 @@ public class GameMain extends JPanel {
     private Board board;
     private State currentState;
     private Seed currentPlayer;
-    // ... (fields lain tetap sama) ...
     private GameMode gameMode;
     private Difficulty currentDifficulty = Difficulty.HARD;
     private GameVariant currentGameVariant = GameVariant.STANDARD;
     private int boardSize = 3;
+
     private String nameX = "Player X";
     private String nameO = "Player O";
+
     private boolean isFirstGame = true;
+
     private Point mousePos;
+
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
     private final AIPlayer aiPlayer;
     private final DatabaseManager dbManager;
 
-
+    private JButton playAgainButton;
     private JPanel gameBoardPanel;
-    private JPanel playerXPanel;
-    private JPanel playerOPanel;
-    private JLabel statusLabel;
-
-    // PERBAIKAN: Menggunakan nama variabel tema yang baru (camelCase)
-    private final Border activePlayerBorder = BorderFactory.createLineBorder(Theme.accentColor, 3);
-    private final Border inactivePlayerBorder = BorderFactory.createEmptyBorder(3, 3, 3, 3);
 
     public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
         this.cardLayout = cardLayout;
         this.dbManager = dbManager;
         this.aiPlayer = new AIPlayer();
-        initUI();
+
+        setLayout(new BorderLayout());
+        setBackground(Theme.BG_MAIN);
+
+        gameBoardPanel = new JPanel();
+        add(gameBoardPanel, BorderLayout.CENTER);
+
+        JPanel bottomPanel = createBottomPanel();
+        add(bottomPanel, BorderLayout.SOUTH);
+
         SoundEffect.initGame();
     }
 
-    private void initUI() {
-        setLayout(new BorderLayout(10, 10));
-        setBackground(Theme.bgMain); // Perbaikan
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        playerXPanel = createPlayerPanel("X", Theme.CROSS_COLOR); // Perbaikan
-        add(playerXPanel, BorderLayout.WEST);
-
-        playerOPanel = createPlayerPanel("O", Theme.NOUGHT_COLOR); // Perbaikan
-        add(playerOPanel, BorderLayout.EAST);
-
-        gameBoardPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                if (board != null) {
-                    board.paint((Graphics2D) g);
-                    paintHoverEffect((Graphics2D) g);
-                }
-            }
-        };
-        gameBoardPanel.setOpaque(false); // Buat transparan agar background utama terlihat
-        add(gameBoardPanel, BorderLayout.CENTER);
-
+    private JPanel createBottomPanel() {
         JPanel bottomPanel = new JPanel(new BorderLayout(20, 0));
         bottomPanel.setOpaque(false);
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
         JButton backButton = new JButton("Back to Menu");
+        backButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        backButton.setBackground(Theme.BG_PANEL);
+        backButton.setForeground(Theme.TEXT_LIGHT);
         backButton.addActionListener(e -> handleBackButton());
         bottomPanel.add(backButton, BorderLayout.WEST);
 
-        statusLabel = new JLabel(" ", SwingConstants.CENTER);
+        playAgainButton = new JButton("Play Again");
+        playAgainButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        playAgainButton.setBackground(Theme.WIN_LINE);
+        playAgainButton.setForeground(Theme.BG_MAIN);
+        playAgainButton.setVisible(false);
+        playAgainButton.addActionListener(e -> resetGame());
+        bottomPanel.add(playAgainButton, BorderLayout.EAST);
+
+        JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
         statusLabel.setFont(Theme.FONT_STATUS);
-        statusLabel.setForeground(Theme.textLight); // Perbaikan
+        statusLabel.setForeground(Theme.TEXT_LIGHT);
         bottomPanel.add(statusLabel, BorderLayout.CENTER);
-
-        add(bottomPanel, BorderLayout.SOUTH);
+        return bottomPanel;
     }
 
-    private JPanel createPlayerPanel(String playerSymbol, Color symbolColor) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Theme.bgPanel); // Perbaikan
-        panel.setPreferredSize(new Dimension(150, 100));
-        panel.setBorder(inactivePlayerBorder);
-
-        JLabel nameLabel = new JLabel("Player " + playerSymbol, SwingConstants.CENTER);
-        nameLabel.setFont(Theme.FONT_BUTTON);
-        nameLabel.setForeground(Theme.textLight); // Perbaikan
-        panel.add(nameLabel, BorderLayout.NORTH);
-
-        JLabel symbolLabel = new JLabel(playerSymbol, SwingConstants.CENTER);
-        symbolLabel.setFont(new Font("Segoe UI", Font.BOLD, 100));
-        symbolLabel.setForeground(symbolColor);
-        panel.add(symbolLabel, BorderLayout.CENTER);
-
-        return panel;
+    public void setDifficulty(Difficulty difficulty) {
+        this.currentDifficulty = difficulty;
     }
-
-    // Sisa metode (startNewGame, resetGame, updateTurnIndicator, dll) tidak ada perubahan logika,
-    // hanya memastikan semua penggunaan variabel Theme sudah benar. Kode lengkap tetap disertakan.
 
     public void startNewGame(GameMode mode, int size, GameVariant variant) {
         this.gameMode = mode;
@@ -118,80 +91,90 @@ public class GameMain extends JPanel {
         this.isFirstGame = true;
 
         this.board = new Board(this, size);
-        int boardDim = Board.CELL_SIZE * size;
-        gameBoardPanel.setPreferredSize(new Dimension(boardDim, boardDim));
+        setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 70));
+
+        remove(gameBoardPanel);
+        gameBoardPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                setBackground(Theme.BG_MAIN);
+                board.paint((Graphics2D) g);
+                paintHoverEffect((Graphics2D) g);
+            }
+        };
+        gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
+        add(gameBoardPanel, BorderLayout.CENTER);
 
         addMouseListeners(gameBoardPanel);
 
-        resetGame();
-
+        revalidate();
+        repaint();
         JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (topFrame != null) {
             topFrame.pack();
             topFrame.setLocationRelativeTo(null);
         }
-        revalidate();
-        repaint();
+
+        resetGame();
     }
 
     private void resetGame() {
         board.newGame();
+        playAgainButton.setVisible(false);
+        currentState = State.PLAYING;
+        currentPlayer = Seed.CROSS;
 
         if (isFirstGame) {
             String inputX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
-            if (inputX == null) { cardLayout.show(mainPanel, "MENU"); return; }
+
+            if (inputX == null) {
+                cardLayout.show(mainPanel, "MENU");
+                return;
+            }
+
             nameX = (inputX.trim().isEmpty()) ? "Player X" : inputX;
 
             if (gameMode == GameMode.PLAYER_VS_PLAYER) {
                 String inputO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
-                if (inputO == null) { cardLayout.show(mainPanel, "MENU"); return; }
+
+                if (inputO == null) {
+                    cardLayout.show(mainPanel, "MENU");
+                    return;
+                }
+
                 nameO = (inputO.trim().isEmpty()) ? "Player O" : inputO;
             }
         }
 
         if (gameMode == GameMode.PLAYER_VS_AI) {
-            nameO = "AI (" + currentDifficulty.name() + ")";
+            nameO = "System AI (" + currentDifficulty.name() + ")";
         }
-
-        ((JLabel) ((BorderLayout)playerXPanel.getLayout()).getLayoutComponent(BorderLayout.NORTH)).setText(nameX);
-        ((JLabel) ((BorderLayout)playerOPanel.getLayout()).getLayoutComponent(BorderLayout.NORTH)).setText(nameO);
 
         isFirstGame = false;
-        currentState = State.PLAYING;
-        currentPlayer = Seed.CROSS;
-        updateTurnIndicator();
-    }
-
-    private void updateTurnIndicator() {
-        if (currentState == State.PLAYING) {
-            statusLabel.setText((currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn");
-            playerXPanel.setBorder(currentPlayer == Seed.CROSS ? activePlayerBorder : inactivePlayerBorder);
-            playerOPanel.setBorder(currentPlayer == Seed.NOUGHT ? activePlayerBorder : inactivePlayerBorder);
-        } else {
-            playerXPanel.setBorder(inactivePlayerBorder);
-            playerOPanel.setBorder(inactivePlayerBorder);
-            if (currentState == State.CROSS_WON) statusLabel.setText(nameX + " Wins!");
-            else if (currentState == State.NOUGHT_WON) statusLabel.setText(nameO + " Wins!");
-            else if (currentState == State.DRAW) statusLabel.setText("It's a Draw!");
-        }
+        repaint();
     }
 
     private void addMouseListeners(JPanel targetPanel) {
-        for(MouseListener ml : targetPanel.getMouseListeners()) { targetPanel.removeMouseListener(ml); }
-        for(MouseMotionListener mml : targetPanel.getMouseMotionListeners()) { targetPanel.removeMouseMotionListener(mml); }
-
         targetPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                System.out.println("Mouse diklik pada papan di (" + e.getX() + ", " + e.getY() + "). Status game saat ini: " + currentState);
+
                 if (currentState == State.PLAYING) {
-                    if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
+                    System.out.println("Memproses langkah permainan...");
+                    if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
+                        System.out.println("Klik diabaikan, ini giliran AI.");
+                        return;
+                    }
                     int row = e.getY() / Board.CELL_SIZE;
                     int col = e.getX() / Board.CELL_SIZE;
                     if (board.isValidMove(row, col)) {
+                        System.out.println("Langkah valid di (" + row + ", " + col + "). Memperbarui game.");
                         updateGame(currentPlayer, row, col);
+                    } else {
+                        System.out.println("Langkah tidak valid.");
                     }
-                } else {
-                    resetGame();
                 }
             }
         });
@@ -220,12 +203,12 @@ public class GameMain extends JPanel {
                 triggerAIMove();
             }
         } else {
+            playAgainButton.setVisible(true);
             if (currentState == State.CROSS_WON || currentState == State.NOUGHT_WON) SoundEffect.EXPLODE.play();
             else if (currentState == State.DRAW) SoundEffect.DIE.play();
             if (dbManager != null) handleDatabaseUpdate();
             board.startWinAnimation();
         }
-        updateTurnIndicator();
         repaint();
     }
 
@@ -240,13 +223,15 @@ public class GameMain extends JPanel {
         timer.start();
     }
 
-    public void setDifficulty(Difficulty difficulty) { this.currentDifficulty = difficulty; }
-
     private void handleBackButton() {
         if (currentState == State.PLAYING) {
-            int response = JOptionPane.showConfirmDialog( this, "Are you sure you want to quit? The current game will be lost.", "Quit Game", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            int response = JOptionPane.showConfirmDialog(
+                    this, "Are you sure you want to quit? The current game will be lost.", "Quit Game",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (response == JOptionPane.NO_OPTION) return;
         }
+        nameX = "Player X";
+        nameO = "Player O";
         isFirstGame = true;
         cardLayout.show(mainPanel, "MENU");
     }
@@ -269,8 +254,32 @@ public class GameMain extends JPanel {
             int row = mousePos.y / Board.CELL_SIZE;
             int col = mousePos.x / Board.CELL_SIZE;
             if (board.isValidMove(row, col)) {
-                g2d.setColor(Theme.HOVER_COLOR); // Perbaikan
+                g2d.setColor(Theme.HOVER);
                 g2d.fillRect(col * Board.CELL_SIZE, row * Board.CELL_SIZE, Board.CELL_SIZE, Board.CELL_SIZE);
+            }
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (getComponentCount() > 1 && getComponent(1) instanceof JPanel) {
+            JPanel bottomPanel = (JPanel) getComponent(1);
+            if (bottomPanel.getComponentCount() > 2 && bottomPanel.getComponent(2) instanceof JLabel) {
+                JLabel statusLabel = (JLabel) bottomPanel.getComponent(2);
+                String status;
+                if (currentState == State.PLAYING) {
+                    status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
+                } else if (currentState == State.CROSS_WON) {
+                    status = nameX + " Wins!";
+                } else if (currentState == State.NOUGHT_WON) {
+                    status = nameO + " Wins!";
+                } else if (currentState == State.DRAW){
+                    status = "It's a Draw!";
+                } else {
+                    status = " ";
+                }
+                statusLabel.setText(status);
             }
         }
     }
