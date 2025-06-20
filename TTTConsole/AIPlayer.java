@@ -22,9 +22,6 @@ public class AIPlayer {
         }
     }
 
-    // --- STRATEGI TINGKAT KESULITAN ---
-
-    /** Level HARD: Menggunakan algoritma Minimax dengan Alpha-Beta Pruning. */
     private int[] findMinimaxMove(Board board) {
         int bestScore = Integer.MIN_VALUE;
         int[] bestMove = new int[]{-1, -1};
@@ -33,7 +30,6 @@ public class AIPlayer {
             for (int c = 0; c < board.COLS; c++) {
                 if (board.isValidMove(r, c)) {
                     board.placeSeed(aiSeed, r, c);
-                    // --- PERUBAHAN: Memanggil minimax dengan alpha-beta ---
                     int score = minimax(board, 0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
                     board.placeSeed(Seed.NO_SEED, r, c);
                     if (score > bestScore) {
@@ -47,9 +43,7 @@ public class AIPlayer {
         return bestMove;
     }
 
-    /** Level MEDIUM: Cek menang, cek blokir, lalu acak. Logika disesuaikan untuk N x N. */
     private int[] findMediumMove(Board board) {
-        // 1. Cek apakah AI bisa menang
         for (int r = 0; r < board.ROWS; r++) {
             for (int c = 0; c < board.COLS; c++) {
                 if (board.isValidMove(r, c)) {
@@ -63,7 +57,6 @@ public class AIPlayer {
             }
         }
 
-        // 2. Cek apakah pemain bisa menang, lalu blokir
         for (int r = 0; r < board.ROWS; r++) {
             for (int c = 0; c < board.COLS; c++) {
                 if (board.isValidMove(r, c)) {
@@ -77,11 +70,23 @@ public class AIPlayer {
             }
         }
 
-        // 3. Jika tidak, pilih acak
+        if (board.ROWS == 3 && board.COLS == 3 && board.isValidMove(1, 1)) {
+            return new int[]{1, 1};
+        }
+
+        List<int[]> cornerMoves = new ArrayList<>();
+        if (board.isValidMove(0, 0)) cornerMoves.add(new int[]{0, 0});
+        if (board.isValidMove(0, board.COLS - 1)) cornerMoves.add(new int[]{0, board.COLS - 1});
+        if (board.isValidMove(board.ROWS - 1, 0)) cornerMoves.add(new int[]{board.ROWS - 1, 0});
+        if (board.isValidMove(board.ROWS - 1, board.COLS - 1)) cornerMoves.add(new int[]{board.ROWS - 1, board.COLS - 1});
+
+        if (!cornerMoves.isEmpty()) {
+            return cornerMoves.get(random.nextInt(cornerMoves.size()));
+        }
+
         return findRandomMove(board);
     }
 
-    /** Level EASY: Pilih langkah acak. */
     private int[] findRandomMove(Board board) {
         List<int[]> emptyCells = new ArrayList<>();
         for (int r = 0; r < board.ROWS; r++) {
@@ -95,14 +100,12 @@ public class AIPlayer {
         return emptyCells.get(random.nextInt(emptyCells.size()));
     }
 
-    // --- Logika Minimax dengan Alpha-Beta Pruning ---
     private int minimax(Board board, int depth, boolean isMaximizing, int alpha, int beta) {
         State result = board.getCurrentGameState();
         if (result != State.PLAYING) {
-            return score(result);
+            return score(result, depth);
         }
 
-        // Batasi kedalaman pencarian untuk papan 4x4 agar tidak terlalu lama
         if (board.ROWS > 3 && depth > 4) {
             return 0;
         }
@@ -116,10 +119,9 @@ public class AIPlayer {
                         int score = minimax(board, depth + 1, false, alpha, beta);
                         board.placeSeed(Seed.NO_SEED, r, c);
                         bestScore = Math.max(score, bestScore);
-                        // --- PRUNING ---
                         alpha = Math.max(alpha, bestScore);
                         if (beta <= alpha) {
-                            return bestScore; // Cut-off
+                            return bestScore;
                         }
                     }
                 }
@@ -134,10 +136,9 @@ public class AIPlayer {
                         int score = minimax(board, depth + 1, true, alpha, beta);
                         board.placeSeed(Seed.NO_SEED, r, c);
                         bestScore = Math.min(score, bestScore);
-                        // --- PRUNING ---
                         beta = Math.min(beta, bestScore);
                         if (beta <= alpha) {
-                            return bestScore; // Cut-off
+                            return bestScore;
                         }
                     }
                 }
@@ -146,9 +147,9 @@ public class AIPlayer {
         }
     }
 
-    private int score(State result) {
-        if (result == State.NOUGHT_WON) return 10;
-        if (result == State.CROSS_WON) return -10;
-        return 0; // Draw
+    private int score(State result, int depth) {
+        if (result == State.NOUGHT_WON) return 10 - depth;
+        if (result == State.CROSS_WON) return -10 + depth;
+        return 0;
     }
 }
