@@ -3,6 +3,8 @@ package TTTConsole;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.NumberFormat;
 import java.util.List;
 
@@ -11,7 +13,6 @@ public class LeaderboardPanel extends JPanel {
     private final JPanel mainPanel;
     private final DatabaseManager dbManager;
     private JTable leaderboardTable;
-    // --- PERUBAHAN: Menambahkan kolom baru ---
     private final String[] columnNames = {"Rank", "Username", "Wins", "Losses", "Draws", "Win Rate"};
 
     public LeaderboardPanel(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
@@ -37,11 +38,11 @@ public class LeaderboardPanel extends JPanel {
         leaderboardTable.setFont(Theme.FONT_STATUS);
         leaderboardTable.setRowHeight(30);
         leaderboardTable.getTableHeader().setFont(Theme.FONT_BUTTON);
-        leaderboardTable.getTableHeader().setBackground(Theme.GRID);
+        leaderboardTable.getTableHeader().setBackground(Theme.BG_PANEL);
         leaderboardTable.getTableHeader().setForeground(Theme.TEXT_LIGHT);
 
         JScrollPane scrollPane = new JScrollPane(leaderboardTable);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Theme.GRID, 2));
+        scrollPane.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
         add(scrollPane, BorderLayout.CENTER);
 
         JButton backButton = new JButton("Back to Menu");
@@ -55,7 +56,7 @@ public class LeaderboardPanel extends JPanel {
     }
 
     public void refreshLeaderboard() {
-        List<Player> players = dbManager.getLeaderboard(); //
+        List<Player> players = dbManager.getLeaderboard();
         DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -68,13 +69,12 @@ public class LeaderboardPanel extends JPanel {
 
         int rank = 1;
         for (Player p : players) {
-            // --- PERUBAHAN: Menambahkan data Win Rate ke tabel ---
             model.addRow(new Object[]{
                     rank++,
-                    p.getUsername(), //
-                    p.getWins(), //
-                    p.getLosses(), //
-                    p.getDraws(), //
+                    p.getUsername(),
+                    p.getWins(),
+                    p.getLosses(),
+                    p.getDraws(),
                     percentFormat.format(p.getWinRate())
             });
         }
@@ -82,11 +82,22 @@ public class LeaderboardPanel extends JPanel {
     }
 
     private void styleButton(JButton button) {
-        button.setFont(Theme.FONT_BUTTON); //
-        button.setForeground(Theme.TEXT_LIGHT); //
-        button.setBackground(Theme.BG_PANEL); //
+        button.setFont(Theme.FONT_BUTTON);
+        button.setBackground(Theme.BG_PANEL);
+        button.setForeground(Theme.TEXT_LIGHT);
         button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createLineBorder(Theme.GRID, 2)); //
-        button.setPreferredSize(new Dimension(200, 50));
+        button.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        button.setPreferredSize(new Dimension(280, 65));
+
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(Theme.BG_PANEL.brighter());
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(Theme.BG_PANEL);
+            }
+        });
     }
 }

@@ -15,7 +15,7 @@ public class DatabaseManager {
     // --- Konfigurasi Database (Aiven Cloud) ---
     private static final String DB_HOST = "mysql-dasprogfinal-akhtar-dasprofinal.f.aivencloud.com";
     private static final String DB_PORT = "28538";
-    private static final String DB_NAME = "tic_tac_toe_db"; // PASTIKAN NAMA INI BENAR
+    private static final String DB_NAME = "Finaldasprog"; // PASTIKAN NAMA INI BENAR
     private static final String DB_USER = "avnadmin";
     private static final String DB_PASSWORD = "AVNS_HBkzd0HRku5PSOY_2Gt";
 

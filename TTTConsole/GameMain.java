@@ -16,10 +16,12 @@ public class GameMain extends JPanel {
     private Seed currentPlayer;
     private GameMode gameMode;
     private Difficulty currentDifficulty = Difficulty.HARD;
-    private int boardSize = 3; // Ukuran default
+    private int boardSize = 3;
 
     private String nameX = "Player X";
     private String nameO = "Player O";
+
+    private boolean isFirstGame = true;
 
     private Point mousePos;
 
@@ -29,7 +31,7 @@ public class GameMain extends JPanel {
     private final DatabaseManager dbManager;
 
     private JButton playAgainButton;
-    private JPanel gameBoardPanel; // Deklarasikan di sini agar bisa diakses
+    private JPanel gameBoardPanel;
 
     public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
@@ -40,11 +42,9 @@ public class GameMain extends JPanel {
         setLayout(new BorderLayout());
         setBackground(Theme.BG_MAIN);
 
-        // Panel papan permainan akan diinisialisasi ulang setiap game baru
         gameBoardPanel = new JPanel();
         add(gameBoardPanel, BorderLayout.CENTER);
 
-        // Panel bawah dengan tombol-tombol
         JPanel bottomPanel = createBottomPanel();
         add(bottomPanel, BorderLayout.SOUTH);
 
@@ -82,18 +82,14 @@ public class GameMain extends JPanel {
         this.currentDifficulty = difficulty;
     }
 
-    // --- PERUBAHAN: Menerima ukuran papan sebagai parameter ---
     public void startNewGame(GameMode mode, int size) {
         this.gameMode = mode;
         this.boardSize = size;
+        this.isFirstGame = true;
 
-        // Buat board baru dengan ukuran yang dipilih
-        this.board = new Board(this, boardSize);
-
-        // Atur ulang ukuran panel utama
+        this.board = new Board(this, size);
         setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 70));
 
-        // Hapus panel game lama dan buat yang baru
         remove(gameBoardPanel);
         gameBoardPanel = new JPanel() {
             @Override
@@ -107,10 +103,8 @@ public class GameMain extends JPanel {
         gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
         add(gameBoardPanel, BorderLayout.CENTER);
 
-        // Tambahkan listener lagi ke panel baru
         addMouseListeners(gameBoardPanel);
 
-        // Revalidate dan repaint frame
         revalidate();
         repaint();
         JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
@@ -128,22 +122,33 @@ public class GameMain extends JPanel {
         currentState = State.PLAYING;
         currentPlayer = Seed.CROSS;
 
-        // Hanya minta nama jika game pertama kali dimulai (atau reset total)
-        // Untuk "Play Again", kita gunakan nama yang sama
-        if (nameX.equals("Player X")) {
-            nameX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
-            if (nameX == null || nameX.trim().isEmpty()) nameX = "Player X";
+        if (isFirstGame) {
+            String inputX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
+
+            if (inputX == null) {
+                cardLayout.show(mainPanel, "MENU");
+                return;
+            }
+
+            nameX = (inputX.trim().isEmpty()) ? "Player X" : inputX;
 
             if (gameMode == GameMode.PLAYER_VS_PLAYER) {
-                nameO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
-                if (nameO == null || nameO.trim().isEmpty()) nameO = "Player O";
+                String inputO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
+
+                if (inputO == null) {
+                    cardLayout.show(mainPanel, "MENU");
+                    return;
+                }
+
+                nameO = (inputO.trim().isEmpty()) ? "Player O" : inputO;
             }
         }
 
         if (gameMode == GameMode.PLAYER_VS_AI) {
-            nameO = "Skynet AI (" + currentDifficulty.name() + ")";
+            nameO = "System AI (" + currentDifficulty.name() + ")";
         }
 
+        isFirstGame = false;
         repaint();
     }
 
@@ -153,8 +158,8 @@ public class GameMain extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (currentState == State.PLAYING) {
                     if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
-                    int row = e.getY() / Cell.SIZE;
-                    int col = e.getX() / Cell.SIZE;
+                    int row = e.getY() / Board.CELL_SIZE;
+                    int col = e.getX() / Board.CELL_SIZE;
                     if (board.isValidMove(row, col)) {
                         updateGame(currentPlayer, row, col);
                     }
@@ -201,7 +206,6 @@ public class GameMain extends JPanel {
         timer.start();
     }
 
-    // ... sisa metode (handleBackButton, handleDatabaseUpdate, paintHoverEffect, paintComponent) tidak berubah signifikan ...
     private void handleBackButton() {
         if (currentState == State.PLAYING) {
             int response = JOptionPane.showConfirmDialog(
@@ -209,9 +213,9 @@ public class GameMain extends JPanel {
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (response == JOptionPane.NO_OPTION) return;
         }
-        // Reset nama saat kembali ke menu
         nameX = "Player X";
         nameO = "Player O";
+        isFirstGame = true;
         cardLayout.show(mainPanel, "MENU");
     }
 
@@ -230,11 +234,11 @@ public class GameMain extends JPanel {
 
     private void paintHoverEffect(Graphics2D g2d) {
         if (mousePos != null && currentState == State.PLAYING) {
-            int row = mousePos.y / Cell.SIZE;
-            int col = mousePos.x / Cell.SIZE;
+            int row = mousePos.y / Board.CELL_SIZE;
+            int col = mousePos.x / Board.CELL_SIZE;
             if (board.isValidMove(row, col)) {
                 g2d.setColor(Theme.HOVER);
-                g2d.fillRect(col * Cell.SIZE, row * Cell.SIZE, Cell.SIZE, Cell.SIZE);
+                g2d.fillRect(col * Board.CELL_SIZE, row * Board.CELL_SIZE, Board.CELL_SIZE, Board.CELL_SIZE);
             }
         }
     }
@@ -242,7 +246,6 @@ public class GameMain extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Pastikan komponen panel bawah ada sebelum mengaksesnya
         if (getComponentCount() > 1 && getComponent(1) instanceof JPanel) {
             JPanel bottomPanel = (JPanel) getComponent(1);
             if (bottomPanel.getComponentCount() > 2 && bottomPanel.getComponent(2) instanceof JLabel) {
