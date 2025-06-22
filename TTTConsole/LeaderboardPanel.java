@@ -2,6 +2,7 @@ package TTTConsole;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -40,9 +41,13 @@ public class LeaderboardPanel extends JPanel {
         leaderboardTable.getTableHeader().setFont(Theme.FONT_BUTTON);
         leaderboardTable.getTableHeader().setBackground(Theme.BG_PANEL);
         leaderboardTable.getTableHeader().setForeground(Theme.TEXT_LIGHT);
+        leaderboardTable.getTableHeader().setReorderingAllowed(false);
+
+        leaderboardTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         JScrollPane scrollPane = new JScrollPane(leaderboardTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
+        scrollPane.getViewport().setBackground(Theme.BG_PANEL);
         add(scrollPane, BorderLayout.CENTER);
 
         JButton backButton = new JButton("Back to Menu");
@@ -79,6 +84,22 @@ public class LeaderboardPanel extends JPanel {
             });
         }
         leaderboardTable.setModel(model);
+
+        setColumnWidths();
+    }
+
+    /**
+     * PERBAIKAN: Nilai untuk kolom "Rank" (indeks 0) dinaikkan dari 50 menjadi 75
+     * agar teks header tidak terpotong. Lebar kolom lain juga disesuaikan.
+     */
+    private void setColumnWidths() {
+        TableColumnModel columnModel = leaderboardTable.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(75);   // Rank
+        columnModel.getColumn(1).setPreferredWidth(180);  // Username
+        columnModel.getColumn(2).setPreferredWidth(75);   // Wins
+        columnModel.getColumn(3).setPreferredWidth(75);   // Losses
+        columnModel.getColumn(4).setPreferredWidth(75);   // Draws
+        columnModel.getColumn(5).setPreferredWidth(100);  // Win Rate
     }
 
     private void styleButton(JButton button) {
@@ -88,9 +109,7 @@ public class LeaderboardPanel extends JPanel {
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         button.setPreferredSize(new Dimension(280, 65));
-
         button.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent evt) {
                 button.setBackground(Theme.BG_PANEL.brighter());

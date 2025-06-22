@@ -38,11 +38,11 @@ public class GameMain extends JPanel {
     private final DatabaseManager dbManager;
 
     private JButton playAgainButton;
-    private JPanel gameBoardPanel; // Panel untuk menggambar papan permainan
-    // PERBAIKAN: Panel ini bertindak sebagai wadah tetap untuk papan permainan.
-    // Menggunakan GridBagLayout memastikan komponen di dalamnya (papan permainan) akan selalu terpusat.
+    private JPanel gameBoardPanel;
     private final JPanel contentPanel;
-    private JLabel statusLabel;
+    // PERBAIKAN: Pisahkan label untuk status dan skor
+    private final JLabel statusLabel;
+    private final JLabel scoreLabel;
     private final Timer opponentMoveTimer;
 
     public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
@@ -50,19 +50,39 @@ public class GameMain extends JPanel {
         this.cardLayout = cardLayout;
         this.dbManager = dbManager;
         this.aiPlayer = new AIPlayer();
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(0, 10));
         setBackground(Theme.BG_MAIN);
+        setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        // PERBAIKAN: Inisialisasi contentPanel di konstruktor.
-        // Panel ini akan selalu ada di posisi TENGAH (CENTER).
+        // --- Panel Atas untuk Status dan Skor ---
+        JPanel topPanel = new JPanel();
+        topPanel.setOpaque(false);
+        // PERBAIKAN: Gunakan BoxLayout untuk menumpuk label secara vertikal
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+
+        statusLabel = new JLabel("Welcome!", SwingConstants.CENTER);
+        statusLabel.setFont(Theme.FONT_STATUS.deriveFont(20f)); // Sedikit lebih besar untuk status utama
+        statusLabel.setForeground(Theme.TEXT_LIGHT);
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        scoreLabel = new JLabel(" ", SwingConstants.CENTER);
+        scoreLabel.setFont(Theme.FONT_STATUS.deriveFont(14f)); // Lebih kecil untuk skor
+        scoreLabel.setForeground(Theme.ACCENT_COLOR);
+        scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        topPanel.add(statusLabel);
+        topPanel.add(scoreLabel);
+        add(topPanel, BorderLayout.NORTH);
+
+        // --- Panel Tengah untuk Papan Permainan ---
         contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(false); // Buat transparan agar background GameMain terlihat
+        contentPanel.setOpaque(false);
         add(contentPanel, BorderLayout.CENTER);
 
+        // --- Panel Bawah untuk Tombol ---
         JPanel bottomPanel = createBottomPanel();
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // Timer untuk mengecek gerakan lawan setiap 2 detik
         opponentMoveTimer = new Timer(2000, e -> checkForOpponentMove());
         opponentMoveTimer.setRepeats(true);
     }
@@ -70,7 +90,7 @@ public class GameMain extends JPanel {
     private JPanel createBottomPanel() {
         JPanel bottomPanel = new JPanel(new BorderLayout(20, 0));
         bottomPanel.setOpaque(false);
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         JButton backButton = new JButton("Back to Menu");
         backButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -93,18 +113,54 @@ public class GameMain extends JPanel {
         });
         bottomPanel.add(playAgainButton, BorderLayout.EAST);
 
-        statusLabel = new JLabel(" ", SwingConstants.CENTER);
-        statusLabel.setFont(Theme.FONT_STATUS);
-        statusLabel.setForeground(Theme.TEXT_LIGHT);
-        bottomPanel.add(statusLabel, BorderLayout.CENTER);
         return bottomPanel;
     }
+
+    // ... metode lainnya tetap sama, hanya updateStatusLabel yang berubah signifikan ...
+
+    /**
+     * PERBAIKAN: Metode ini sekarang mengatur dua label terpisah untuk status dan skor.
+     * Hal ini mencegah teks menjadi terlalu panjang dan terpotong.
+     */
+    private void updateStatusLabel() {
+        String statusText;
+        String scoreText = " "; // Defaultnya kosong
+
+        if (currentState == State.PLAYING) {
+            if (gameMode == GameMode.ONLINE_MULTIPLAYER) {
+                statusText = (currentPlayer == mySeed) ? "Your Turn (" + myUsername + ")" : "Waiting for " + (mySeed == Seed.CROSS ? nameO : nameX) + "...";
+            } else {
+                statusText = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
+            }
+        } else { // Game Over
+            if (currentState == State.CROSS_WON) {
+                statusText = nameX + " Wins!";
+            } else if (currentState == State.NOUGHT_WON) {
+                statusText = nameO + " Wins!";
+            } else if (currentState == State.DRAW){
+                statusText = "It's a Draw!";
+            } else {
+                statusText = " ";
+            }
+
+            // Tampilkan skor hanya untuk mode lokal
+            if (gameMode != GameMode.ONLINE_MULTIPLAYER) {
+                scoreText = String.format("Score: %s [%d] - %s [%d] - Draws [%d]", nameX, winsX, nameO, winsO, draws);
+            }
+        }
+
+        statusLabel.setText(statusText);
+        scoreLabel.setText(scoreText);
+    }
+
+    // =================================================================================
+    // Sisa metode di bawah ini tidak mengalami perubahan dari versi sebelumnya
+    // =================================================================================
 
     public void setDifficulty(Difficulty difficulty) {
         this.currentDifficulty = difficulty;
     }
 
-    // Metode untuk memulai game lokal (vs AI atau vs Player)
     public void startNewGame(GameMode mode, int size, GameVariant variant) {
         this.gameMode = mode;
         this.currentGameVariant = variant;
@@ -114,14 +170,12 @@ public class GameMain extends JPanel {
 
         AudioManager.playSound("GAME_START");
 
-        // Reset skor sesi untuk permainan baru
         winsX = 0;
         winsO = 0;
         draws = 0;
         resetGame();
     }
 
-    // Metode untuk memulai game online
     public void startNewGame(GameMode mode, int size, GameVariant variant, String gameId, Seed mySeed, String myUsername, String opponentUsername) {
         this.gameMode = mode;
         this.currentGameVariant = variant;
@@ -153,15 +207,8 @@ public class GameMain extends JPanel {
         repaint();
     }
 
-    /**
-     * PERBAIKAN UTAMA: Metode ini sekarang bertanggung jawab untuk membersihkan
-     * dan menyiapkan papan permainan baru dengan benar.
-     */
     private void setupBoard(int size) {
-        // 1. Hapus SEMUA komponen dari wadah (menghilangkan papan lama)
         contentPanel.removeAll();
-
-        // 2. Buat panel baru untuk papan permainan
         gameBoardPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -173,24 +220,17 @@ public class GameMain extends JPanel {
             }
         };
 
-        // 3. Buat objek Board baru dengan ukuran yang benar
         this.board = new Board(gameBoardPanel, size);
-
-        // 4. Atur ukuran panel agar sesuai dengan ukuran papan baru
-        setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 80));
+        setPreferredSize(new Dimension(board.CANVAS_WIDTH + 40, board.CANVAS_HEIGHT + 130)); // Tambah ruang untuk panel atas/bawah
         gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
 
-        // 5. Tambahkan listener mouse ke panel papan permainan yang baru
         addMouseListeners(gameBoardPanel);
 
-        // 6. Tambahkan papan permainan baru ke dalam wadah yang sudah kosong
         contentPanel.add(gameBoardPanel, new GridBagConstraints());
 
-        // 7. Validasi ulang UI untuk menggambar perubahan
         contentPanel.revalidate();
         contentPanel.repaint();
 
-        // 8. Sesuaikan ukuran window utama agar pas dengan papan baru
         JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (topFrame != null) {
             topFrame.pack();
@@ -198,7 +238,6 @@ public class GameMain extends JPanel {
         }
     }
 
-    // Metode reset game untuk memulai ronde baru (tanpa mengubah nama/skor)
     private void resetGame() {
         board.newGame();
         playAgainButton.setVisible(false);
@@ -384,35 +423,5 @@ public class GameMain extends JPanel {
                 g2d.fillRect(col * Board.CELL_SIZE, row * Board.CELL_SIZE, Board.CELL_SIZE, Board.CELL_SIZE);
             }
         }
-    }
-
-    private void updateStatusLabel() {
-        String status;
-        if (currentState == State.PLAYING) {
-            if (gameMode == GameMode.ONLINE_MULTIPLAYER) {
-                status = (currentPlayer == mySeed) ? "Giliran Anda (" + myUsername + ")" : "Menunggu " + (mySeed == Seed.CROSS ? nameO : nameX) + "...";
-            } else {
-                status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
-            }
-        } else {
-            String endMessage;
-            if (currentState == State.CROSS_WON) {
-                endMessage = nameX + " Wins!";
-            } else if (currentState == State.NOUGHT_WON) {
-                endMessage = nameO + " Wins!";
-            } else if (currentState == State.DRAW){
-                endMessage = "It's a Draw!";
-            } else {
-                endMessage = " ";
-            }
-
-            if(gameMode != GameMode.ONLINE_MULTIPLAYER) {
-                String score = String.format(" | Score: %s - %d, %s - %d, Draws - %d", nameX, winsX, nameO, winsO, draws);
-                status = endMessage + score;
-            } else {
-                status = endMessage;
-            }
-        }
-        statusLabel.setText(status);
     }
 }
