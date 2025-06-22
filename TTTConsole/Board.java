@@ -1,111 +1,241 @@
 package TTTConsole;
 
+import javax.swing.*;
 import java.awt.*;
-/**
- * The Board class models the ROWS-by-COLS game board.
- */
-public class Board {
-    // Define named constants
-    public static final int ROWS = 3;  // ROWS x COLS cells
-    public static final int COLS = 3;
-    // Define named constants for drawing
-    public static final int CANVAS_WIDTH = Cell.SIZE * COLS;  // the drawing canvas
-    public static final int CANVAS_HEIGHT = Cell.SIZE * ROWS;
-    public static final int GRID_WIDTH = 8;  // Grid-line's width
-    public static final int GRID_WIDTH_HALF = GRID_WIDTH / 2; // Grid-line's half-width
-    public static final Color COLOR_GRID = Color.LIGHT_GRAY;  // grid lines
-    public static final int Y_OFFSET = 1;  // Fine tune for better display
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.Serializable;
 
-    // Define properties (package-visible)
-    /** Composes of 2D array of ROWS-by-COLS Cell instances */
-    Cell[][] cells;
+public class Board implements Serializable {
+    public int ROWS;
+    public int COLS;
+    public int WIN_STREAK;
 
-    /** Constructor to initialize the game board */
-    public Board() {
-        initGame();
-    }
+    public int CANVAS_WIDTH;
+    public int CANVAS_HEIGHT;
+    public static final int CELL_SIZE = 120;
+    private static final int GRID_THICKNESS = 8;
 
-    /** Initialize the game objects (run once) */
-    public void initGame() {
-        cells = new Cell[ROWS][COLS]; // allocate the array
-        for (int row = 0; row < ROWS; ++row) {
-            for (int col = 0; col < COLS; ++col) {
-                // Allocate element of the array
-                cells[row][col] = new Cell(row, col);
-                // Cells are initialized in the constructor
+    public Cell[][] cells;
+    private int[] winningLineCoords = null;
+    private float winAnimationProgress = 0f;
+
+    private transient Timer winAnimationTimer;
+    private transient JPanel gameSurface;
+    private transient BufferedImage backgroundImage;
+
+    public Board(JPanel surface, int size) {
+        this.gameSurface = surface;
+        this.ROWS = size;
+        this.COLS = size;
+        // PERUBAHAN LOGIKA: Syarat kemenangan (WIN_STREAK) sekarang selalu sama dengan ukuran papan (size).
+        // Sebelumnya, untuk papan 7x7, syaratnya hanya 5.
+        this.WIN_STREAK = size;
+
+        this.CANVAS_WIDTH = CELL_SIZE * COLS;
+        this.CANVAS_HEIGHT = CELL_SIZE * ROWS;
+
+        // Muat gambar background
+        this.backgroundImage = AssetManager.getImage("BACKGROUND");
+
+        cells = new Cell[ROWS][COLS];
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                cells[r][c] = new Cell(r, c);
             }
         }
     }
 
-    /** Reset the game board, ready for new game */
     public void newGame() {
-        for (int row = 0; row < ROWS; ++row) {
-            for (int col = 0; col < COLS; ++col) {
-                cells[row][col].newGame(); // clear the cell content
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                cells[r][c].newGame();
             }
+        }
+        winningLineCoords = null;
+        winAnimationProgress = 0;
+        if (winAnimationTimer != null) {
+            winAnimationTimer.stop();
         }
     }
 
-    /**
-     *  The given player makes a move on (selectedRow, selectedCol).
-     *  Update cells[selectedRow][selectedCol]. Compute and return the
-     *  new game state (PLAYING, DRAW, CROSS_WON, NOUGHT_WON).
-     */
-    public State stepGame(Seed player, int selectedRow, int selectedCol) {
-        // Update game board
-        cells[selectedRow][selectedCol].content = player;
+    public void paint(Graphics2D g2d) {
+        // Mengaktifkan anti-aliasing untuk gambar dan garis yang lebih halus
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Compute and return the new game state
-        if (cells[selectedRow][0].content == player  // 3-in-the-row
-                && cells[selectedRow][1].content == player
-                && cells[selectedRow][2].content == player
-                || cells[0][selectedCol].content == player // 3-in-the-column
-                && cells[1][selectedCol].content == player
-                && cells[2][selectedCol].content == player
-                || selectedRow == selectedCol     // 3-in-the-diagonal
-                && cells[0][0].content == player
-                && cells[1][1].content == player
-                && cells[2][2].content == player
-                || selectedRow + selectedCol == 2 // 3-in-the-opposite-diagonal
-                && cells[0][2].content == player
-                && cells[1][1].content == player
-                && cells[2][0].content == player) {
-            return (player == Seed.CROSS) ? State.CROSS_WON : State.NOUGHT_WON;
+        // 1. Gambar background
+        if (backgroundImage != null) {
+            g2d.drawImage(backgroundImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, null);
         } else {
-            // Nobody win. Check for DRAW (all cells occupied) or PLAYING.
-            for (int row = 0; row < ROWS; ++row) {
-                for (int col = 0; col < COLS; ++col) {
-                    if (cells[row][col].content == Seed.NO_SEED) {
-                        return State.PLAYING; // still have empty cells
+            // Latar belakang polos jika gambar tidak ada
+            g2d.setColor(Theme.BG_MAIN);
+            g2d.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+
+        // 2. Gambar semua simbol (X dan O)
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                cells[r][c].paint(g2d);
+            }
+        }
+
+        // 3. Gambar garis grid di atas simbol
+        g2d.setColor(new Color(255, 255, 255, 100)); // Warna grid putih transparan
+        g2d.setStroke(new BasicStroke(GRID_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        for (int i = 1; i < ROWS; i++) {
+            g2d.drawLine(0, i * CELL_SIZE, CANVAS_WIDTH, i * CELL_SIZE);
+        }
+        for (int i = 1; i < COLS; i++) {
+            g2d.drawLine(i * CELL_SIZE, 0, i * CELL_SIZE, CANVAS_HEIGHT);
+        }
+
+        // 4. Gambar garis kemenangan (jika ada)
+        if (winningLineCoords != null) {
+            drawWinningLine(g2d);
+        }
+    }
+
+    private void drawWinningLine(Graphics2D g2d) {
+        g2d.setColor(Theme.WIN_LINE);
+        g2d.setStroke(new BasicStroke(12, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+        int x1 = winningLineCoords[1] * CELL_SIZE + CELL_SIZE / 2;
+        int y1 = winningLineCoords[0] * CELL_SIZE + CELL_SIZE / 2;
+        int x2 = winningLineCoords[3] * CELL_SIZE + CELL_SIZE / 2;
+        int y2 = winningLineCoords[2] * CELL_SIZE + CELL_SIZE / 2;
+
+        int animatedX2 = x1 + (int)((x2 - x1) * winAnimationProgress);
+        int animatedY2 = y1 + (int)((y2 - y1) * winAnimationProgress);
+
+        g2d.drawLine(x1, y1, animatedX2, animatedY2);
+    }
+
+    public void startWinAnimation() {
+        if (winAnimationTimer != null && winAnimationTimer.isRunning()) {
+            winAnimationTimer.stop();
+        }
+        winAnimationTimer = new Timer(15, e -> {
+            winAnimationProgress += 0.05f;
+            if (winAnimationProgress >= 1.0f) {
+                winAnimationProgress = 1.0f;
+                winAnimationTimer.stop();
+            }
+            if (gameSurface != null) gameSurface.repaint();
+        });
+        winAnimationTimer.start();
+    }
+
+    // --- Logika Game ---
+
+    public boolean isValidMove(int row, int col) {
+        if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+            return cells[row][col].content == Seed.NO_SEED;
+        }
+        return false;
+    }
+
+    public void placeSeed(Seed player, int row, int col) {
+        cells[row][col].content = player;
+    }
+
+    public State checkGameState(Seed player, int row, int col) {
+        if (hasWon(player, row, col)) {
+            return (player == Seed.CROSS) ? State.CROSS_WON : State.NOUGHT_WON;
+        }
+        if (isDraw()) {
+            return State.DRAW;
+        }
+        return State.PLAYING;
+    }
+
+    public boolean isDraw() {
+        for(Cell[] row : cells) {
+            for(Cell cell : row) {
+                if(cell.content == Seed.NO_SEED) return false;
+            }
+        }
+        return true;
+    }
+
+    public State getCurrentGameState() {
+        if (hasWon(Seed.NOUGHT)) return State.NOUGHT_WON;
+        if (hasWon(Seed.CROSS)) return State.CROSS_WON;
+        if (isDraw()) return State.DRAW;
+        return State.PLAYING;
+    }
+
+    private boolean hasWon(Seed player, int r, int c) {
+        return checkLine(player, r, c, 0, 1)    // Horizontal
+                || checkLine(player, r, c, 1, 0)    // Vertikal
+                || checkLine(player, r, c, 1, 1)    // Diagonal (\)
+                || checkLine(player, r, c, 1, -1);  // Anti-Diagonal (/)
+    }
+
+    private boolean checkLine(Seed player, int r, int c, int dr, int dc) {
+        int count = 1;
+
+        int rStart = r, cStart = c, rEnd = r, cEnd = c;
+
+        // Periksa ke arah positif
+        for (int i = 1; i < WIN_STREAK; i++) {
+            int nr = r + i * dr;
+            int nc = c + i * dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == player) {
+                count++;
+                rEnd = nr; cEnd = nc;
+            } else {
+                break;
+            }
+        }
+
+        // Periksa ke arah negatif
+        for (int i = 1; i < WIN_STREAK; i++) {
+            int nr = r - i * dr;
+            int nc = c - i * dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == player) {
+                count++;
+                rStart = nr; cStart = nc;
+            } else {
+                break;
+            }
+        }
+
+        if (count >= WIN_STREAK) {
+            winningLineCoords = new int[]{rStart, cStart, rEnd, cEnd};
+            return true;
+        }
+        return false;
+    }
+
+    private boolean hasWon(Seed p) {
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                if (cells[r][c].content == p) {
+                    if (c + WIN_STREAK <= COLS) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r][c + i].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                    if (r + WIN_STREAK <= ROWS) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r + i][c].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                    if (r + WIN_STREAK <= ROWS && c + WIN_STREAK <= COLS) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r + i][c + i].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                    if (r + WIN_STREAK <= ROWS && c - WIN_STREAK + 1 >= 0) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r + i][c - i].content == p) count++;
+                        if (count == WIN_STREAK) return true;
                     }
                 }
             }
-            return State.DRAW; // no empty cell, it's a draw
         }
-    }
-
-    /** Paint itself on the graphics canvas, given the Graphics context */
-    public void paint(Graphics g) {
-        // Draw the grid-lines
-        g.setColor(COLOR_GRID);
-        for (int row = 1; row < ROWS; ++row) {
-            g.fillRoundRect(0, Cell.SIZE * row - GRID_WIDTH_HALF,
-                    CANVAS_WIDTH - 1, GRID_WIDTH,
-                    GRID_WIDTH, GRID_WIDTH);
-        }
-        for (int col = 1; col < COLS; ++col) {
-            g.fillRoundRect(Cell.SIZE * col - GRID_WIDTH_HALF, 0 + Y_OFFSET,
-                    GRID_WIDTH, CANVAS_HEIGHT - 1,
-                    GRID_WIDTH, GRID_WIDTH);
-        }
-
-        // Draw all the cells
-        for (int row = 0; row < ROWS; ++row) {
-            for (int col = 0; col < COLS; ++col) {
-                cells[row][col].paint(g);  // ask the cell to paint itself
-            }
-        }
+        return false;
     }
 }
-
-
