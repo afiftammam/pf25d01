@@ -5,8 +5,8 @@ import java.awt.*;
 
 public class Theme {
 
-    public static Color BG_MAIN = new Color(13, 29, 39);
-    public static Color BG_PANEL = new Color(30, 52, 69);
+    public static Color BG_MAIN = new Color(10, 25, 47);
+    public static Color BG_PANEL = new Color(23, 42, 69);
     public static Color ACCENT_COLOR = new Color(51, 224, 206);
     public static Color TEXT_LIGHT = new Color(255, 255, 255);
     public static Color TEXT_DARK = new Color(13, 29, 39);
@@ -20,8 +20,8 @@ public class Theme {
     public static final Font FONT_STATUS = new Font("Segoe UI", Font.BOLD, 18);
 
     public static void applyCyberTheme() {
-        BG_MAIN = new Color(13, 29, 39);
-        BG_PANEL = new Color(30, 52, 69);
+        BG_MAIN = new Color(10, 25, 47);
+        BG_PANEL = new Color(23, 42, 69);
         ACCENT_COLOR = new Color(51, 224, 206);
         TEXT_LIGHT = new Color(255, 255, 255);
         TEXT_DARK = new Color(13, 29, 39);

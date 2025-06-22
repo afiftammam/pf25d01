@@ -8,7 +8,7 @@ public class Game {
         SwingUtilities.invokeLater(() -> {
             // PERUBAHAN: Inisialisasi semua aset (gambar & suara) di awal.
             AssetManager.loadAssets();
-            AudioManager.setVolume(AudioManager.Volume.LOW); // Atur volume default
+            AudioManager.setVolume(AudioManager.Volume.HIGH); // Atur volume default
 
             UIManager.put("Panel.background", Theme.BG_MAIN);
             UIManager.put("OptionPane.background", Theme.BG_MAIN);

@@ -22,6 +22,10 @@ public class GameMain extends JPanel {
     private String nameX = "Player X";
     private String nameO = "Player O";
 
+    private int winsX = 0;
+    private int winsO = 0;
+    private int draws = 0;
+
     private boolean isFirstGame = true;
     private Point mousePos;
     private final JPanel mainPanel;
@@ -73,11 +77,6 @@ public class GameMain extends JPanel {
         return bottomPanel;
     }
 
-    /**
-     * PERBAIKAN: Metode yang hilang ditambahkan kembali.
-     * Metode ini dipanggil oleh MainMenuPanel untuk mengatur tingkat kesulitan.
-     * @param difficulty Tingkat kesulitan baru (EASY, MEDIUM, HARD).
-     */
     public void setDifficulty(Difficulty difficulty) {
         this.currentDifficulty = difficulty;
     }
@@ -88,6 +87,10 @@ public class GameMain extends JPanel {
         this.isFirstGame = true;
         this.board = new Board(this, size);
         setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 70));
+
+        winsX = 0;
+        winsO = 0;
+        draws = 0;
 
         remove(gameBoardPanel);
         gameBoardPanel = new JPanel() {
@@ -100,7 +103,12 @@ public class GameMain extends JPanel {
             }
         };
         gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
-        add(gameBoardPanel, BorderLayout.CENTER);
+
+        JPanel wrapperPanel = new JPanel(new GridBagLayout());
+        wrapperPanel.setOpaque(false);
+        wrapperPanel.add(gameBoardPanel);
+        add(wrapperPanel, BorderLayout.CENTER);
+
         addMouseListeners(gameBoardPanel);
 
         AudioManager.playSound("GAME_START");
@@ -224,12 +232,15 @@ public class GameMain extends JPanel {
         if (currentState == State.CROSS_WON) {
             dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.WIN);
             dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.LOSS);
+            winsX++;
         } else if (currentState == State.NOUGHT_WON) {
             dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.WIN);
             dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.LOSS);
+            winsO++;
         } else if (currentState == State.DRAW) {
             dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.DRAW);
             dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.DRAW);
+            draws++;
         }
     }
 
@@ -258,14 +269,17 @@ public class GameMain extends JPanel {
         String status;
         if (currentState == State.PLAYING) {
             status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
-        } else if (currentState == State.CROSS_WON) {
-            status = nameX + " Wins!";
-        } else if (currentState == State.NOUGHT_WON) {
-            status = nameO + " Wins!";
-        } else if (currentState == State.DRAW){
-            status = "It's a Draw!";
         } else {
-            status = " ";
+            String score = String.format(" | Score: %s - %d, %s - %d, Draws - %d", nameX, winsX, nameO, winsO, draws);
+            if (currentState == State.CROSS_WON) {
+                status = nameX + " Wins!" + score;
+            } else if (currentState == State.NOUGHT_WON) {
+                status = nameO + " Wins!" + score;
+            } else if (currentState == State.DRAW){
+                status = "It's a Draw!" + score;
+            } else {
+                status = " ";
+            }
         }
         statusLabel.setText(status);
     }
