@@ -8,7 +8,8 @@ import java.awt.event.MouseMotionAdapter;
 
 public class GameMain extends JPanel {
 
-    public enum GameMode { PLAYER_VS_PLAYER, PLAYER_VS_AI }
+    // PERUBAHAN: Menambahkan mode baru
+    public enum GameMode { PLAYER_VS_PLAYER, PLAYER_VS_AI, ONLINE_MULTIPLAYER }
     public enum Difficulty { EASY, MEDIUM, HARD }
     public enum GameVariant { STANDARD, MISERE }
 
@@ -21,6 +22,10 @@ public class GameMain extends JPanel {
 
     private String nameX = "Player X";
     private String nameO = "Player O";
+    private String myUsername;
+    private Seed mySeed;
+    private String gameId;
+    private int moveCount = 0;
 
     private int winsX = 0;
     private int winsO = 0;
@@ -35,7 +40,9 @@ public class GameMain extends JPanel {
 
     private JButton playAgainButton;
     private JPanel gameBoardPanel;
+    private JPanel contentPanel;
     private JLabel statusLabel;
+    private Timer opponentMoveTimer;
 
     public GameMain(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
@@ -44,11 +51,20 @@ public class GameMain extends JPanel {
         this.aiPlayer = new AIPlayer();
         setLayout(new BorderLayout());
         setBackground(Theme.BG_MAIN);
-        gameBoardPanel = new JPanel();
-        add(gameBoardPanel, BorderLayout.CENTER);
+
+        contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setOpaque(false);
+        add(contentPanel, BorderLayout.CENTER);
+
         JPanel bottomPanel = createBottomPanel();
         add(bottomPanel, BorderLayout.SOUTH);
+
+        // Timer untuk mengecek gerakan lawan setiap 2 detik
+        opponentMoveTimer = new Timer(2000, e -> checkForOpponentMove());
+        opponentMoveTimer.setRepeats(true);
     }
+
+    // ... [Metode createBottomPanel dan setDifficulty tetap sama] ...
 
     private JPanel createBottomPanel() {
         JPanel bottomPanel = new JPanel(new BorderLayout(20, 0));
@@ -67,7 +83,13 @@ public class GameMain extends JPanel {
         playAgainButton.setBackground(Theme.WIN_LINE);
         playAgainButton.setForeground(Theme.BG_MAIN);
         playAgainButton.setVisible(false);
-        playAgainButton.addActionListener(e -> resetGame());
+        playAgainButton.addActionListener(e -> {
+            if (gameMode == GameMode.ONLINE_MULTIPLAYER) {
+                JOptionPane.showMessageDialog(this, "Play Again is not supported for online mode.\nPlease start a new game from the menu.");
+            } else {
+                resetGame();
+            }
+        });
         bottomPanel.add(playAgainButton, BorderLayout.EAST);
 
         statusLabel = new JLabel(" ", SwingConstants.CENTER);
@@ -81,37 +103,76 @@ public class GameMain extends JPanel {
         this.currentDifficulty = difficulty;
     }
 
+
+    public void startNewGame(GameMode mode, int size, GameVariant variant, String gameId, Seed mySeed, String myUsername, String opponentUsername) {
+        this.gameMode = mode;
+        this.currentGameVariant = variant;
+        this.gameId = gameId;
+        this.mySeed = mySeed;
+        this.myUsername = myUsername;
+
+        if (mySeed == Seed.CROSS) {
+            this.nameX = myUsername;
+            this.nameO = opponentUsername;
+        } else {
+            this.nameX = opponentUsername;
+            this.nameO = myUsername;
+        }
+
+        // Setup papan permainan
+        setupBoard(size);
+        board.newGame();
+
+        currentState = State.PLAYING;
+        currentPlayer = Seed.CROSS;
+        moveCount = 0;
+        updateStatusLabel();
+
+        // Mulai timer untuk memeriksa gerakan lawan
+        if (opponentMoveTimer.isRunning()) {
+            opponentMoveTimer.stop();
+        }
+        opponentMoveTimer.start();
+
+        repaint();
+    }
+
     public void startNewGame(GameMode mode, int size, GameVariant variant) {
         this.gameMode = mode;
         this.currentGameVariant = variant;
         this.isFirstGame = true;
-        this.board = new Board(this, size);
-        setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 70));
+
+        setupBoard(size);
+
+        AudioManager.playSound("GAME_START");
 
         winsX = 0;
         winsO = 0;
         draws = 0;
+        resetGame();
+    }
 
-        remove(gameBoardPanel);
+    private void setupBoard(int size) {
+        contentPanel.removeAll();
         gameBoardPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 setBackground(Theme.BG_MAIN);
-                board.paint((Graphics2D) g);
+                if (board != null) {
+                    board.paint((Graphics2D) g);
+                }
                 paintHoverEffect((Graphics2D) g);
             }
         };
-        gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
 
-        JPanel wrapperPanel = new JPanel(new GridBagLayout());
-        wrapperPanel.setOpaque(false);
-        wrapperPanel.add(gameBoardPanel);
-        add(wrapperPanel, BorderLayout.CENTER);
+        this.board = new Board(gameBoardPanel, size);
+        setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 80));
+        gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
 
         addMouseListeners(gameBoardPanel);
 
-        AudioManager.playSound("GAME_START");
+        contentPanel.add(gameBoardPanel, new GridBagConstraints());
 
         revalidate();
         repaint();
@@ -120,7 +181,6 @@ public class GameMain extends JPanel {
             topFrame.pack();
             topFrame.setLocationRelativeTo(null);
         }
-        resetGame();
     }
 
     private void resetGame() {
@@ -131,20 +191,22 @@ public class GameMain extends JPanel {
         updateStatusLabel();
 
         if (isFirstGame) {
-            String inputX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
-            if (inputX == null) {
-                cardLayout.show(mainPanel, "MENU");
-                return;
-            }
-            nameX = (inputX.trim().isEmpty()) ? "Player X" : inputX;
-
-            if (gameMode == GameMode.PLAYER_VS_PLAYER) {
-                String inputO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
-                if (inputO == null) {
+            if (gameMode != GameMode.ONLINE_MULTIPLAYER) {
+                String inputX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
+                if (inputX == null) {
                     cardLayout.show(mainPanel, "MENU");
                     return;
                 }
-                nameO = (inputO.trim().isEmpty()) ? "Player O" : inputO;
+                nameX = (inputX.trim().isEmpty()) ? "Player X" : inputX;
+
+                if (gameMode == GameMode.PLAYER_VS_PLAYER) {
+                    String inputO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
+                    if (inputO == null) {
+                        cardLayout.show(mainPanel, "MENU");
+                        return;
+                    }
+                    nameO = (inputO.trim().isEmpty()) ? "Player O" : inputO;
+                }
             }
         }
 
@@ -156,12 +218,34 @@ public class GameMain extends JPanel {
         repaint();
     }
 
+    private void checkForOpponentMove() {
+        if (currentState != State.PLAYING || currentPlayer == mySeed) {
+            return; // Bukan giliran kita atau game sudah selesai
+        }
+
+        int[] move = dbManager.getLatestMove(gameId, moveCount);
+        if (move != null) {
+            // Ada gerakan baru dari lawan
+            opponentMoveTimer.stop(); // Hentikan sementara polling
+            updateGame(currentPlayer, move[0], move[1]);
+        }
+    }
+
+
     private void addMouseListeners(JPanel targetPanel) {
         targetPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (currentState == State.PLAYING) {
+                    // Logika untuk mode AI
                     if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
+
+                    // PERUBAHAN: Logika untuk mode Online
+                    if (gameMode == GameMode.ONLINE_MULTIPLAYER && currentPlayer != mySeed) {
+                        // Bukan giliran pemain ini
+                        return;
+                    }
+
                     int row = e.getY() / Board.CELL_SIZE;
                     int col = e.getX() / Board.CELL_SIZE;
                     if (board.isValidMove(row, col)) {
@@ -180,6 +264,15 @@ public class GameMain extends JPanel {
     }
 
     private void updateGame(Seed player, int row, int col) {
+        // Jika ini adalah giliran kita dalam mode online, catat gerakan ke DB
+        if (gameMode == GameMode.ONLINE_MULTIPLAYER && player == mySeed) {
+            moveCount++;
+            dbManager.recordMove(gameId, moveCount, player, row, col);
+        } else if (gameMode == GameMode.ONLINE_MULTIPLAYER && player != mySeed) {
+            // Jika ini adalah gerakan dari lawan yang diterima dari DB
+            moveCount++;
+        }
+
         board.placeSeed(player, row, col);
 
         if (player == Seed.CROSS) AudioManager.playSound("CROSS_MOVE");
@@ -193,14 +286,25 @@ public class GameMain extends JPanel {
 
         if (currentState == State.PLAYING) {
             currentPlayer = (currentPlayer == Seed.CROSS) ? Seed.NOUGHT : Seed.CROSS;
+            updateStatusLabel();
+
             if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
                 triggerAIMove();
+            } else if (gameMode == GameMode.ONLINE_MULTIPLAYER && currentPlayer != mySeed) {
+                opponentMoveTimer.restart(); // Mulai lagi polling untuk gerakan lawan berikutnya
             }
+
         } else {
-            playAgainButton.setVisible(true);
+            if(opponentMoveTimer.isRunning()) opponentMoveTimer.stop(); // Hentikan polling jika game selesai
+            playAgainButton.setVisible(gameMode != GameMode.ONLINE_MULTIPLAYER); // Sembunyikan untuk online
             handleEndGameSounds();
             if (dbManager != null) handleDatabaseUpdate();
             board.startWinAnimation();
+
+            if (gameMode == GameMode.ONLINE_MULTIPLAYER) {
+                String winner = (currentState == State.CROSS_WON) ? nameX : (currentState == State.NOUGHT_WON) ? nameO : "DRAW";
+                dbManager.updateGameWinner(gameId, winner);
+            }
         }
         updateStatusLabel();
         repaint();
@@ -208,14 +312,22 @@ public class GameMain extends JPanel {
 
     private void handleEndGameSounds() {
         if (currentState == State.CROSS_WON) {
-            AudioManager.playSound("WIN");
+            if (gameMode == GameMode.ONLINE_MULTIPLAYER && mySeed == Seed.CROSS) AudioManager.playSound("WIN");
+            else if (gameMode == GameMode.ONLINE_MULTIPLAYER && mySeed == Seed.NOUGHT) AudioManager.playSound("LOSE");
+            else AudioManager.playSound("WIN");
+
         } else if (currentState == State.NOUGHT_WON) {
             if (gameMode == GameMode.PLAYER_VS_AI) AudioManager.playSound("LOSE");
+            else if (gameMode == GameMode.ONLINE_MULTIPLAYER && mySeed == Seed.NOUGHT) AudioManager.playSound("WIN");
+            else if (gameMode == GameMode.ONLINE_MULTIPLAYER && mySeed == Seed.CROSS) AudioManager.playSound("LOSE");
             else AudioManager.playSound("WIN");
+
         } else if (currentState == State.DRAW) {
             AudioManager.playSound("DRAW");
         }
     }
+
+    // ... [triggerAIMove, handleBackButton, paintHoverEffect tetap sama] ...
 
     private void triggerAIMove() {
         Timer timer = new Timer(500, e -> {
@@ -229,33 +341,59 @@ public class GameMain extends JPanel {
     }
 
     private void handleDatabaseUpdate() {
-        if (currentState == State.CROSS_WON) {
-            dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.WIN);
-            dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.LOSS);
-            winsX++;
-        } else if (currentState == State.NOUGHT_WON) {
-            dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.WIN);
-            dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.LOSS);
-            winsO++;
-        } else if (currentState == State.DRAW) {
-            dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.DRAW);
-            dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.DRAW);
-            draws++;
+        // Hanya update statistik untuk game non-online di akhir,
+        // karena game online mungkin melibatkan pemain yang tidak ada di leaderboard
+        if (gameMode != GameMode.ONLINE_MULTIPLAYER) {
+            if (currentState == State.CROSS_WON) {
+                dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.WIN);
+                dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.LOSS);
+                winsX++;
+            } else if (currentState == State.NOUGHT_WON) {
+                dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.WIN);
+                dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.LOSS);
+                winsO++;
+            } else if (currentState == State.DRAW) {
+                dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.DRAW);
+                dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.DRAW);
+                draws++;
+            }
+        } else {
+            // Untuk online, kita bisa update berdasarkan hasil dari DB
+            if (currentState == State.CROSS_WON) {
+                dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.WIN);
+                dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.LOSS);
+            } else if (currentState == State.NOUGHT_WON) {
+                dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.WIN);
+                dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.LOSS);
+            } else if (currentState == State.DRAW) {
+                dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.DRAW);
+                dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.DRAW);
+            }
         }
     }
 
     private void handleBackButton() {
+        if (opponentMoveTimer.isRunning()) {
+            opponentMoveTimer.stop();
+        }
         if (currentState == State.PLAYING) {
             int response = JOptionPane.showConfirmDialog(
                     this, "Are you sure you want to quit? The current game will be lost.", "Quit Game",
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (response == JOptionPane.NO_OPTION) return;
+            if (response == JOptionPane.NO_OPTION) {
+                if(gameMode == GameMode.ONLINE_MULTIPLAYER) opponentMoveTimer.start();
+                return;
+            }
         }
         cardLayout.show(mainPanel, "MENU");
     }
 
     private void paintHoverEffect(Graphics2D g2d) {
-        if (mousePos != null && currentState == State.PLAYING) {
+        boolean isMyTurn = (gameMode == GameMode.ONLINE_MULTIPLAYER && currentPlayer == mySeed) ||
+                (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.CROSS) ||
+                (gameMode == GameMode.PLAYER_VS_PLAYER);
+
+        if (mousePos != null && currentState == State.PLAYING && isMyTurn) {
             int row = mousePos.y / Board.CELL_SIZE;
             int col = mousePos.x / Board.CELL_SIZE;
             if (board.isValidMove(row, col)) {
@@ -268,18 +406,24 @@ public class GameMain extends JPanel {
     private void updateStatusLabel() {
         String status;
         if (currentState == State.PLAYING) {
-            status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
+            if (gameMode == GameMode.ONLINE_MULTIPLAYER) {
+                status = (currentPlayer == mySeed) ? "Your Turn (" + myUsername + ")" : "Waiting for " + (mySeed == Seed.CROSS ? nameO : nameX) + "...";
+            } else {
+                status = (currentPlayer == Seed.CROSS ? nameX : nameO) + "'s Turn";
+            }
         } else {
             String score = String.format(" | Score: %s - %d, %s - %d, Draws - %d", nameX, winsX, nameO, winsO, draws);
+            String endMessage;
             if (currentState == State.CROSS_WON) {
-                status = nameX + " Wins!" + score;
+                endMessage = nameX + " Wins!";
             } else if (currentState == State.NOUGHT_WON) {
-                status = nameO + " Wins!" + score;
+                endMessage = nameO + " Wins!";
             } else if (currentState == State.DRAW){
-                status = "It's a Draw!" + score;
+                endMessage = "It's a Draw!";
             } else {
-                status = " ";
+                endMessage = " ";
             }
+            status = endMessage + (gameMode != GameMode.ONLINE_MULTIPLAYER ? score : "");
         }
         statusLabel.setText(status);
     }

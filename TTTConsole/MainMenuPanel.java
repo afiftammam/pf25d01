@@ -85,11 +85,16 @@ public class MainMenuPanel extends JPanel {
         gbc.insets = new Insets(10, 0, 10, 0);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JButton pvaButton = new JButton("Play Solo");
+        JButton pvaButton = new JButton("Play Solo (vs AI)");
         stylePrimaryButton(pvaButton);
         pvaButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_AI));
 
-        JButton pvpButton = new JButton("Play with a friend");
+        // PERUBAHAN: Tombol baru untuk mode online
+        JButton onlineButton = new JButton("Play Online");
+        stylePrimaryButton(onlineButton);
+        onlineButton.addActionListener(e -> cardLayout.show(mainPanel, "ONLINE_MENU"));
+
+        JButton pvpButton = new JButton("Play Local (2 Players)");
         stylePrimaryButton(pvpButton);
         pvpButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_PLAYER));
 
@@ -106,10 +111,11 @@ public class MainMenuPanel extends JPanel {
         styleSecondaryButton(settingsButton);
         settingsButton.addActionListener(e -> cardLayout.show(mainPanel, "SETTINGS"));
 
-        gbc.gridy = 0; buttonPanel.add(pvaButton, gbc);
-        gbc.gridy = 1; buttonPanel.add(pvpButton, gbc);
-        gbc.gridy = 2; buttonPanel.add(leaderboardButton, gbc);
-        gbc.gridy = 3; buttonPanel.add(settingsButton, gbc);
+        gbc.gridy = 0; buttonPanel.add(onlineButton, gbc);
+        gbc.gridy = 1; buttonPanel.add(pvaButton, gbc);
+        gbc.gridy = 2; buttonPanel.add(pvpButton, gbc);
+        gbc.gridy = 3; buttonPanel.add(leaderboardButton, gbc);
+        gbc.gridy = 4; buttonPanel.add(settingsButton, gbc);
 
         JPanel optionsPanel = new JPanel(new GridBagLayout());
         optionsPanel.setOpaque(false);
@@ -119,7 +125,7 @@ public class MainMenuPanel extends JPanel {
         gbcOptions.weightx = 1.0;
 
         gbcOptions.gridx = 0; gbcOptions.gridy = 0;
-        JLabel sizeLabel = new JLabel("Grid Size:");
+        JLabel sizeLabel = new JLabel("Grid Size (Local/AI only):");
         sizeLabel.setFont(Theme.FONT_STATUS);
         sizeLabel.setForeground(Theme.TEXT_LIGHT);
         optionsPanel.add(sizeLabel, gbcOptions);
@@ -132,7 +138,7 @@ public class MainMenuPanel extends JPanel {
         optionsPanel.add(boardSizeSelector, gbcOptions);
 
         gbcOptions.gridx = 0; gbcOptions.gridy = 1;
-        JLabel variantLabel = new JLabel("Game Rules:");
+        JLabel variantLabel = new JLabel("Game Rules (Local/AI only):");
         variantLabel.setFont(Theme.FONT_STATUS);
         variantLabel.setForeground(Theme.TEXT_LIGHT);
         optionsPanel.add(variantLabel, gbcOptions);
@@ -158,7 +164,7 @@ public class MainMenuPanel extends JPanel {
         difficultySelector.setSelectedItem(GameMain.Difficulty.HARD);
         optionsPanel.add(difficultySelector, gbcOptions);
 
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         gbc.insets = new Insets(20, 0, 10, 0);
         buttonPanel.add(optionsPanel, gbc);
 

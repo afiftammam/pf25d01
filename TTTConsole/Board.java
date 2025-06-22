@@ -14,7 +14,7 @@ public class Board implements Serializable {
     public int CANVAS_WIDTH;
     public int CANVAS_HEIGHT;
     public static final int CELL_SIZE = 120;
-    private static final int GRID_THICKNESS = 8; // Ketebalan garis grid
+    private static final int GRID_THICKNESS = 8;
 
     public Cell[][] cells;
     private int[] winningLineCoords = null;
@@ -28,7 +28,9 @@ public class Board implements Serializable {
         this.gameSurface = surface;
         this.ROWS = size;
         this.COLS = size;
-        this.WIN_STREAK = (size > 5) ? 5 : size; // Win streak 5 untuk board > 5
+        // PERUBAHAN LOGIKA: Syarat kemenangan (WIN_STREAK) sekarang selalu sama dengan ukuran papan (size).
+        // Sebelumnya, untuk papan 7x7, syaratnya hanya 5.
+        this.WIN_STREAK = size;
 
         this.CANVAS_WIDTH = CELL_SIZE * COLS;
         this.CANVAS_HEIGHT = CELL_SIZE * ROWS;
@@ -123,7 +125,7 @@ public class Board implements Serializable {
         winAnimationTimer.start();
     }
 
-    // --- Logika Game (diambil dari kode asli Anda) ---
+    // --- Logika Game ---
 
     public boolean isValidMove(int row, int col) {
         if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
@@ -162,43 +164,37 @@ public class Board implements Serializable {
         return State.PLAYING;
     }
 
-    private boolean hasWon(Seed p) {
-        for (int r = 0; r < ROWS; r++) {
-            for (int c = 0; c < COLS; c++) {
-                if (checkLine(r, c, 1, 0, p) || // Horizontal
-                        checkLine(r, c, 0, 1, p) || // Vertikal
-                        checkLine(r, c, 1, 1, p) || // Diagonal \
-                        checkLine(r, c, 1, -1, p)) { // Diagonal /
-                    return true;
-                }
-            }
-        }
-        return false;
+    private boolean hasWon(Seed player, int r, int c) {
+        return checkLine(player, r, c, 0, 1)    // Horizontal
+                || checkLine(player, r, c, 1, 0)    // Vertikal
+                || checkLine(player, r, c, 1, 1)    // Diagonal (\)
+                || checkLine(player, r, c, 1, -1);  // Anti-Diagonal (/)
     }
 
-    private boolean hasWon(Seed p, int r, int c) {
-        return checkLine(r, c, 1, 0, p) ||
-                checkLine(r, c, 0, 1, p) ||
-                checkLine(r, c, 1, 1, p) ||
-                checkLine(r, c, 1, -1, p);
-    }
+    private boolean checkLine(Seed player, int r, int c, int dr, int dc) {
+        int count = 1;
 
-    private boolean checkLine(int r, int c, int dr, int dc, Seed p) {
-        int count = 0;
-        int rStart = -1, cStart = -1, rEnd = -1, cEnd = -1;
+        int rStart = r, cStart = c, rEnd = r, cEnd = c;
 
-        // Hitung ke satu arah
-        for (int i = 0; i < WIN_STREAK; i++) {
+        // Periksa ke arah positif
+        for (int i = 1; i < WIN_STREAK; i++) {
             int nr = r + i * dr;
             int nc = c + i * dc;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == p) {
-                if (count == 0) {
-                    rStart = nr;
-                    cStart = nc;
-                }
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == player) {
                 count++;
-                rEnd = nr;
-                cEnd = nc;
+                rEnd = nr; cEnd = nc;
+            } else {
+                break;
+            }
+        }
+
+        // Periksa ke arah negatif
+        for (int i = 1; i < WIN_STREAK; i++) {
+            int nr = r - i * dr;
+            int nc = c - i * dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && cells[nr][nc].content == player) {
+                count++;
+                rStart = nr; cStart = nc;
             } else {
                 break;
             }
@@ -207,6 +203,36 @@ public class Board implements Serializable {
         if (count >= WIN_STREAK) {
             winningLineCoords = new int[]{rStart, cStart, rEnd, cEnd};
             return true;
+        }
+        return false;
+    }
+
+    private boolean hasWon(Seed p) {
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                if (cells[r][c].content == p) {
+                    if (c + WIN_STREAK <= COLS) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r][c + i].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                    if (r + WIN_STREAK <= ROWS) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r + i][c].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                    if (r + WIN_STREAK <= ROWS && c + WIN_STREAK <= COLS) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r + i][c + i].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                    if (r + WIN_STREAK <= ROWS && c - WIN_STREAK + 1 >= 0) {
+                        int count = 0;
+                        for (int i = 0; i < WIN_STREAK; i++) if (cells[r + i][c - i].content == p) count++;
+                        if (count == WIN_STREAK) return true;
+                    }
+                }
+            }
         }
         return false;
     }

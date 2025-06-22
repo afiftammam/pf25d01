@@ -32,6 +32,14 @@ public class SettingsPanel extends JPanel {
         themeLabel.setForeground(Theme.TEXT_LIGHT);
         themeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        JButton spaceThemeButton = new JButton("Space Theme");
+        styleButton(spaceThemeButton);
+        spaceThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        spaceThemeButton.addActionListener(e -> {
+            Theme.applySpaceTheme();
+            Theme.updateUI(mainFrame);
+        });
+
         JButton cyberThemeButton = new JButton("Cyber Theme");
         styleButton(cyberThemeButton);
         cyberThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -49,6 +57,8 @@ public class SettingsPanel extends JPanel {
         });
 
         themePanel.add(themeLabel);
+        themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        themePanel.add(spaceThemeButton);
         themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
         themePanel.add(cyberThemeButton);
         themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
