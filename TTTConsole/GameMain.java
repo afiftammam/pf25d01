@@ -18,15 +18,12 @@ public class GameMain extends JPanel {
     private GameMode gameMode;
     private Difficulty currentDifficulty = Difficulty.HARD;
     private GameVariant currentGameVariant = GameVariant.STANDARD;
-    private int boardSize = 3;
 
     private String nameX = "Player X";
     private String nameO = "Player O";
 
     private boolean isFirstGame = true;
-
     private Point mousePos;
-
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
     private final AIPlayer aiPlayer;
@@ -41,17 +38,12 @@ public class GameMain extends JPanel {
         this.cardLayout = cardLayout;
         this.dbManager = dbManager;
         this.aiPlayer = new AIPlayer();
-
         setLayout(new BorderLayout());
         setBackground(Theme.BG_MAIN);
-
         gameBoardPanel = new JPanel();
         add(gameBoardPanel, BorderLayout.CENTER);
-
         JPanel bottomPanel = createBottomPanel();
         add(bottomPanel, BorderLayout.SOUTH);
-
-        SoundEffect.initGame();
     }
 
     private JPanel createBottomPanel() {
@@ -81,16 +73,19 @@ public class GameMain extends JPanel {
         return bottomPanel;
     }
 
+    /**
+     * PERBAIKAN: Metode yang hilang ditambahkan kembali.
+     * Metode ini dipanggil oleh MainMenuPanel untuk mengatur tingkat kesulitan.
+     * @param difficulty Tingkat kesulitan baru (EASY, MEDIUM, HARD).
+     */
     public void setDifficulty(Difficulty difficulty) {
         this.currentDifficulty = difficulty;
     }
 
     public void startNewGame(GameMode mode, int size, GameVariant variant) {
         this.gameMode = mode;
-        this.boardSize = size;
         this.currentGameVariant = variant;
         this.isFirstGame = true;
-
         this.board = new Board(this, size);
         setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT + 70));
 
@@ -106,8 +101,9 @@ public class GameMain extends JPanel {
         };
         gameBoardPanel.setPreferredSize(new Dimension(board.CANVAS_WIDTH, board.CANVAS_HEIGHT));
         add(gameBoardPanel, BorderLayout.CENTER);
-
         addMouseListeners(gameBoardPanel);
+
+        AudioManager.playSound("GAME_START");
 
         revalidate();
         repaint();
@@ -116,7 +112,6 @@ public class GameMain extends JPanel {
             topFrame.pack();
             topFrame.setLocationRelativeTo(null);
         }
-
         resetGame();
     }
 
@@ -129,22 +124,18 @@ public class GameMain extends JPanel {
 
         if (isFirstGame) {
             String inputX = JOptionPane.showInputDialog(this, "Enter name for Player X:", "Player X");
-
             if (inputX == null) {
                 cardLayout.show(mainPanel, "MENU");
                 return;
             }
-
             nameX = (inputX.trim().isEmpty()) ? "Player X" : inputX;
 
             if (gameMode == GameMode.PLAYER_VS_PLAYER) {
                 String inputO = JOptionPane.showInputDialog(this, "Enter name for Player O:", "Player O");
-
                 if (inputO == null) {
                     cardLayout.show(mainPanel, "MENU");
                     return;
                 }
-
                 nameO = (inputO.trim().isEmpty()) ? "Player O" : inputO;
             }
         }
@@ -162,9 +153,7 @@ public class GameMain extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (currentState == State.PLAYING) {
-                    if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) {
-                        return;
-                    }
+                    if (gameMode == GameMode.PLAYER_VS_AI && currentPlayer == Seed.NOUGHT) return;
                     int row = e.getY() / Board.CELL_SIZE;
                     int col = e.getX() / Board.CELL_SIZE;
                     if (board.isValidMove(row, col)) {
@@ -173,7 +162,6 @@ public class GameMain extends JPanel {
                 }
             }
         });
-
         targetPanel.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -185,7 +173,10 @@ public class GameMain extends JPanel {
 
     private void updateGame(Seed player, int row, int col) {
         board.placeSeed(player, row, col);
-        SoundEffect.EAT_FOOD.play();
+
+        if (player == Seed.CROSS) AudioManager.playSound("CROSS_MOVE");
+        else if (player == Seed.NOUGHT) AudioManager.playSound("NOUGHT_MOVE");
+
         currentState = board.checkGameState(player, row, col);
 
         if (currentGameVariant == GameVariant.MISERE && (currentState == State.CROSS_WON || currentState == State.NOUGHT_WON)) {
@@ -199,28 +190,23 @@ public class GameMain extends JPanel {
             }
         } else {
             playAgainButton.setVisible(true);
-            if (currentState == State.CROSS_WON || currentState == State.NOUGHT_WON) SoundEffect.EXPLODE.play();
-            else if (currentState == State.DRAW) SoundEffect.DIE.play();
+            handleEndGameSounds();
             if (dbManager != null) handleDatabaseUpdate();
             board.startWinAnimation();
-
-            String message;
-            if (currentState == State.CROSS_WON) {
-                message = nameX + " Wins!";
-            } else if (currentState == State.NOUGHT_WON) {
-                message = nameO + " Wins!";
-            } else {
-                message = "It's a Draw!";
-            }
-
-            Timer popupTimer = new Timer(500, e -> {
-                JOptionPane.showMessageDialog(this, message, "Game Over", JOptionPane.INFORMATION_MESSAGE);
-            });
-            popupTimer.setRepeats(false);
-            popupTimer.start();
         }
         updateStatusLabel();
         repaint();
+    }
+
+    private void handleEndGameSounds() {
+        if (currentState == State.CROSS_WON) {
+            AudioManager.playSound("WIN");
+        } else if (currentState == State.NOUGHT_WON) {
+            if (gameMode == GameMode.PLAYER_VS_AI) AudioManager.playSound("LOSE");
+            else AudioManager.playSound("WIN");
+        } else if (currentState == State.DRAW) {
+            AudioManager.playSound("DRAW");
+        }
     }
 
     private void triggerAIMove() {
@@ -234,6 +220,19 @@ public class GameMain extends JPanel {
         timer.start();
     }
 
+    private void handleDatabaseUpdate() {
+        if (currentState == State.CROSS_WON) {
+            dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.WIN);
+            dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.LOSS);
+        } else if (currentState == State.NOUGHT_WON) {
+            dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.WIN);
+            dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.LOSS);
+        } else if (currentState == State.DRAW) {
+            dbManager.updatePlayerStats(nameX, DatabaseManager.GameResult.DRAW);
+            dbManager.updatePlayerStats(nameO, DatabaseManager.GameResult.DRAW);
+        }
+    }
+
     private void handleBackButton() {
         if (currentState == State.PLAYING) {
             int response = JOptionPane.showConfirmDialog(
@@ -241,23 +240,7 @@ public class GameMain extends JPanel {
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (response == JOptionPane.NO_OPTION) return;
         }
-        nameX = "Player X";
-        nameO = "Player O";
-        isFirstGame = true;
         cardLayout.show(mainPanel, "MENU");
-    }
-
-    private void handleDatabaseUpdate() {
-        if (currentState == State.CROSS_WON) {
-            dbManager.updatePlayerStats(nameX, State.CROSS_WON);
-            dbManager.updatePlayerStats(nameO, State.PLAYING);
-        } else if (currentState == State.NOUGHT_WON) {
-            dbManager.updatePlayerStats(nameO, State.NOUGHT_WON);
-            dbManager.updatePlayerStats(nameX, State.PLAYING);
-        } else if (currentState == State.DRAW) {
-            dbManager.updatePlayerStats(nameX, State.DRAW);
-            dbManager.updatePlayerStats(nameO, State.DRAW);
-        }
     }
 
     private void paintHoverEffect(Graphics2D g2d) {
@@ -285,11 +268,5 @@ public class GameMain extends JPanel {
             status = " ";
         }
         statusLabel.setText(status);
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        updateStatusLabel();
     }
 }

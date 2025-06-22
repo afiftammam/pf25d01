@@ -1,6 +1,7 @@
 package TTTConsole;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.Serializable;
 
 public class Cell implements Serializable {
@@ -17,27 +18,34 @@ public class Cell implements Serializable {
         content = Seed.NO_SEED;
     }
 
+    /**
+     * Versi final: Metode paint hanya menggambar gambar simbol X atau O.
+     * Latar belakang dan grid digambar oleh kelas Board.
+     */
     public void paint(Graphics2D g2d) {
-        int margin = 8;
-        int cellSize = Board.CELL_SIZE;
-        int x = col * cellSize + margin;
-        int y = row * cellSize + margin;
-        int size = cellSize - (2 * margin);
-        int cornerRadius = 20;
+        // Jangan menggambar apa pun jika sel kosong
+        if (content == Seed.NO_SEED) {
+            return;
+        }
 
-        g2d.setColor(Theme.BG_PANEL);
-        g2d.fillRoundRect(x, y, size, size, cornerRadius, cornerRadius);
-
-        int symbolPadding = 25;
-        g2d.setStroke(new BasicStroke(18, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-
+        BufferedImage symbolImage = null;
         if (content == Seed.CROSS) {
-            g2d.setColor(Theme.CROSS);
-            g2d.drawLine(x + symbolPadding, y + symbolPadding, x + size - symbolPadding, y + size - symbolPadding);
-            g2d.drawLine(x + size - symbolPadding, y + symbolPadding, x + symbolPadding, y + size - symbolPadding);
+            symbolImage = AssetManager.getImage("CROSS");
         } else if (content == Seed.NOUGHT) {
-            g2d.setColor(Theme.NOUGHT);
-            g2d.drawOval(x + symbolPadding, y + symbolPadding, size - 2 * symbolPadding, size - 2 * symbolPadding);
+            symbolImage = AssetManager.getImage("NOUGHT");
+        }
+
+        // Gambar simbol jika ada
+        if (symbolImage != null) {
+            int cellSize = Board.CELL_SIZE;
+            // Padding agar gambar tidak terlalu mepet ke tepi sel
+            int padding = (int) (cellSize * 0.15); // 15% padding
+
+            int x = col * cellSize + padding;
+            int y = row * cellSize + padding;
+            int size = cellSize - (2 * padding);
+
+            g2d.drawImage(symbolImage, x, y, size, size, null);
         }
     }
 }
