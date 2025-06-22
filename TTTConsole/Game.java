@@ -6,9 +6,9 @@ import java.awt.*;
 public class Game {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            // PERUBAHAN: Inisialisasi semua aset (gambar & suara) di awal.
             AssetManager.loadAssets();
-            AudioManager.setVolume(AudioManager.Volume.HIGH); // Atur volume default
+            Theme.applySpaceTheme();
+            AudioManager.setVolume(AudioManager.Volume.HIGH);
 
             UIManager.put("Panel.background", Theme.BG_MAIN);
             UIManager.put("OptionPane.background", Theme.BG_MAIN);
@@ -39,11 +39,17 @@ public class Game {
             GameMain gameMain = new GameMain(mainPanel, cardLayout, dbManager);
             LeaderboardPanel leaderboardPanel = new LeaderboardPanel(mainPanel, cardLayout, dbManager);
             SettingsPanel settingsPanel = new SettingsPanel(mainPanel, cardLayout, frame);
+            // PERUBAHAN: Tambahkan panel baru untuk menu online
+            OnlineMenuPanel onlineMenu = new OnlineMenuPanel(mainPanel, cardLayout, gameMain, dbManager);
+
 
             mainPanel.add(mainMenu, "MENU");
             mainPanel.add(gameMain, "GAME");
             mainPanel.add(leaderboardPanel, "LEADERBOARD");
             mainPanel.add(settingsPanel, "SETTINGS");
+            // PERUBAHAN: Daftarkan panel online ke card layout
+            mainPanel.add(onlineMenu, "ONLINE_MENU");
+
 
             mainMenu.setGamePanel(gameMain);
             mainMenu.setLeaderboardPanel(leaderboardPanel);
