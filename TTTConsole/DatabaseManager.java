@@ -9,7 +9,7 @@ public class DatabaseManager {
 
     private static final String DB_HOST = "mysql-dasprogfinal-akhtar-dasprofinal.f.aivencloud.com"; //
     private static final String DB_PORT = "28538"; //
-    private static final String DB_NAME = "Finaldasprog"; //
+    private static final String DB_NAME = "defaultdb"; //
     private static final String DB_USER = "avnadmin"; //
     private static final String DB_PASSWORD = "AVNS_HBkzd0HRku5PSOY_2Gt"; //
 
