@@ -3,7 +3,9 @@ package TTTConsole;
 import javax.swing.*;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class DatabaseManager {
@@ -26,7 +28,6 @@ public class DatabaseManager {
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
             System.out.println("Koneksi database Aiven berhasil.");
             createPlayerTable();
-            // PERUBAHAN: Buat tabel baru untuk game multiplayer
             createGamesTable();
             createMovesTable();
         } catch (SQLException e) {
@@ -51,8 +52,6 @@ public class DatabaseManager {
         }
     }
 
-    // --- LOGIKA BARU UNTUK MULTIPLAYER ONLINE ---
-
     private void createGamesTable() {
         String createTableSQL = "CREATE TABLE IF NOT EXISTS games (" +
                 "game_id VARCHAR(10) PRIMARY KEY," +
@@ -60,6 +59,8 @@ public class DatabaseManager {
                 "player_o VARCHAR(50)," +
                 "status ENUM('WAITING', 'IN_PROGRESS', 'FINISHED') NOT NULL," +
                 "winner VARCHAR(50)," +
+                "board_size INT NOT NULL DEFAULT 3," +
+                "game_variant VARCHAR(20) NOT NULL DEFAULT 'STANDARD'," +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                 ");";
         try (Statement statement = connection.createStatement()) {
@@ -78,7 +79,7 @@ public class DatabaseManager {
                 "row_pos INT NOT NULL," +
                 "col_pos INT NOT NULL," +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "FOREIGN KEY (game_id) REFERENCES games(game_id)" +
+                "FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE" +
                 ");";
         try (Statement statement = connection.createStatement()) {
             statement.execute(createTableSQL);
@@ -87,12 +88,14 @@ public class DatabaseManager {
         }
     }
 
-    public String createNewGame(String playerX) {
+    public String createNewGame(String playerX, int boardSize, GameMain.GameVariant variant) {
         String gameId = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        String query = "INSERT INTO games (game_id, player_x, status) VALUES (?, ?, 'WAITING')";
+        String query = "INSERT INTO games (game_id, player_x, status, board_size, game_variant) VALUES (?, ?, 'WAITING', ?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             pstmt.setString(1, gameId);
             pstmt.setString(2, playerX);
+            pstmt.setInt(3, boardSize);
+            pstmt.setString(4, variant.name());
             pstmt.executeUpdate();
             return gameId;
         } catch (SQLException e) {
@@ -101,17 +104,43 @@ public class DatabaseManager {
         }
     }
 
-    public boolean joinGame(String gameId, String playerO) {
+    public Map<String, Object> joinGame(String gameId, String playerO) {
+        Map<String, Object> gameDetails = getGameDetails(gameId);
+        if (gameDetails == null || !"WAITING".equals(gameDetails.get("status"))) {
+            return null;
+        }
+
         String query = "UPDATE games SET player_o = ?, status = 'IN_PROGRESS' WHERE game_id = ? AND status = 'WAITING'";
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             pstmt.setString(1, playerO);
             pstmt.setString(2, gameId);
             int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
+            if (rowsAffected > 0) {
+                return gameDetails;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return null;
+    }
+
+    public Map<String, Object> getGameDetails(String gameId) {
+        String query = "SELECT player_x, status, board_size, game_variant FROM games WHERE game_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, gameId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("player_x", rs.getString("player_x"));
+                details.put("status", rs.getString("status"));
+                details.put("board_size", rs.getInt("board_size"));
+                details.put("game_variant", GameMain.GameVariant.valueOf(rs.getString("game_variant")));
+                return details;
+            }
+        } catch (SQLException | IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public boolean recordMove(String gameId, int moveNumber, Seed player, int row, int col) {
@@ -131,20 +160,20 @@ public class DatabaseManager {
     }
 
     public int[] getLatestMove(String gameId, int currentMoveCount) {
-        String query = "SELECT row_pos, col_pos, player_seed FROM moves WHERE game_id = ? ORDER BY move_number DESC LIMIT 1";
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, gameId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                // Check if a new move has been made
-                String moveCountQuery = "SELECT COUNT(*) FROM moves WHERE game_id = ?";
-                try (PreparedStatement countPstmt = connection.prepareStatement(moveCountQuery)) {
-                    countPstmt.setString(1, gameId);
-                    ResultSet countRs = countPstmt.executeQuery();
-                    if (countRs.next()) {
-                        int totalMoves = countRs.getInt(1);
-                        if (totalMoves > currentMoveCount) {
-                            return new int[]{rs.getInt("row_pos"), rs.getInt("col_pos")};
+        String countQuery = "SELECT COUNT(*) FROM moves WHERE game_id = ?";
+        try (PreparedStatement countPstmt = connection.prepareStatement(countQuery)) {
+            countPstmt.setString(1, gameId);
+            ResultSet countRs = countPstmt.executeQuery();
+            if (countRs.next()) {
+                int totalMovesInDB = countRs.getInt(1);
+                if (totalMovesInDB > currentMoveCount) {
+                    // Ada gerakan baru, ambil yang paling baru
+                    String moveQuery = "SELECT row_pos, col_pos FROM moves WHERE game_id = ? ORDER BY move_number DESC LIMIT 1";
+                    try (PreparedStatement movePstmt = connection.prepareStatement(moveQuery)) {
+                        movePstmt.setString(1, gameId);
+                        ResultSet moveRs = movePstmt.executeQuery();
+                        if (moveRs.next()) {
+                            return new int[]{moveRs.getInt("row_pos"), moveRs.getInt("col_pos")};
                         }
                     }
                 }
@@ -152,7 +181,7 @@ public class DatabaseManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null; // No new move found
+        return null; // Tidak ada gerakan baru
     }
 
     public void updateGameWinner(String gameId, String winnerUsername) {
@@ -166,9 +195,8 @@ public class DatabaseManager {
         }
     }
 
-    // Metode lama
     public void updatePlayerStats(String username, GameResult result) {
-        if (connection == null || username == null || username.trim().isEmpty() || username.equals("Skynet AI") || username.startsWith("System AI")) {
+        if (connection == null || username == null || username.trim().isEmpty() || username.startsWith("System AI") || username.equals("Waiting...")) {
             return;
         }
 
