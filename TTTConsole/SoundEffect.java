@@ -1,21 +1,27 @@
 package TTTConsole;
 
+
 import javax.sound.sampled.*;
 import java.io.IOException;
 import java.net.URL;
+
 
 public enum SoundEffect {
     EAT_FOOD("TTTConsole/audio/hidup-jokowi.wav"),
     EXPLODE("TTTConsole/audio/explode.wav"),
     DIE("TTTConsole/audio/die.wav");
 
+
     public enum Volume {
         MUTE, LOW, MEDIUM, HIGH
     }
 
+
     public static Volume volume = Volume.LOW;
 
+
     private Clip clip;
+
 
     SoundEffect(String soundFileName) {
         try {
@@ -32,6 +38,7 @@ public enum SoundEffect {
         }
     }
 
+
     public void play() {
         if (volume != Volume.MUTE && clip != null) {
             if (clip.isRunning())
@@ -41,7 +48,9 @@ public enum SoundEffect {
         }
     }
 
+
     static void initGame() {
         values();
     }
 }
+
