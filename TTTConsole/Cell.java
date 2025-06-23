@@ -1,15 +1,13 @@
+// afiftammam/pf25d01/pf25d01-3dfb4fb69b1a626b65b6f26d53b96147041a1c8f/TTTConsole/Cell.java
 package TTTConsole;
-
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 
-
 public class Cell implements Serializable {
     Seed content;
     int row, col;
-
 
     public Cell(int row, int col) {
         this.row = row;
@@ -17,22 +15,20 @@ public class Cell implements Serializable {
         newGame();
     }
 
-
     public void newGame() {
         content = Seed.NO_SEED;
     }
 
-
     /**
-     * Versi final: Metode paint hanya menggambar gambar simbol X atau O.
-     * Latar belakang dan grid digambar oleh kelas Board.
+     * --- [PERUBAHAN] ---
+     * Metode paint sekarang menerima cellSize sebagai parameter.
+     * Ini memungkinkan simbol untuk digambar dengan ukuran yang benar
+     * berdasarkan ukuran sel yang dihitung secara dinamis.
      */
-    public void paint(Graphics2D g2d) {
-        // Jangan menggambar apa pun jika sel kosong
+    public void paint(Graphics2D g2d, int cellSize) {
         if (content == Seed.NO_SEED) {
             return;
         }
-
 
         BufferedImage symbolImage = null;
         if (content == Seed.CROSS) {
@@ -41,21 +37,13 @@ public class Cell implements Serializable {
             symbolImage = AssetManager.getImage("NOUGHT");
         }
 
-
-        // Gambar simbol jika ada
         if (symbolImage != null) {
-            int cellSize = Board.CELL_SIZE;
-            // Padding agar gambar tidak terlalu mepet ke tepi sel
-            int padding = (int) (cellSize * 0.15); // 15% padding
-
-
+            int padding = (int) (cellSize * 0.15);
             int x = col * cellSize + padding;
             int y = row * cellSize + padding;
             int size = cellSize - (2 * padding);
-
 
             g2d.drawImage(symbolImage, x, y, size, size, null);
         }
     }
 }
-
