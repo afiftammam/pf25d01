@@ -1,7 +1,4 @@
-// afiftammam/pf25d01/pf25d01-acd6714e758bd2a8398fc7d001fa7670d6d6b4ac/TTTConsole/AssetManager.java
 package TTTConsole;
-
-
 
 
 import javax.imageio.ImageIO;
@@ -13,17 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-
-
 public class AssetManager {
-
-
 
 
     private static final Map<String, BufferedImage> images = new HashMap<>();
     private static final Map<String, Clip> sounds = new HashMap<>();
-
-
 
 
     public static void loadAssets() {
@@ -31,14 +22,6 @@ public class AssetManager {
 
 
 
-
-        // PERUBAHAN: Pemuatan gambar dipindahkan ke kelas Theme
-        // untuk memungkinkan pemuatan aset dinamis berdasarkan tema yang dipilih.
-
-
-
-
-        // Memuat semua suara yang dibutuhkan
         System.out.println("\n--- Memulai Pemuatan Suara ---");
         loadSound("GAME_START", "TTTConsole/audio/GameStart.wav");
         loadSound("CROSS_MOVE", "TTTConsole/audio/Ex.wav");
@@ -46,10 +29,9 @@ public class AssetManager {
         loadSound("WIN", "TTTConsole/audio/Winning.wav");
         loadSound("LOSE", "TTTConsole/audio/lose.wav");
         loadSound("DRAW", "TTTConsole/audio/Draw.wav");
+        loadSound("MAIN_MENU_MUSIC", "TTTConsole/audio/MainMenuMusic.wav");
         System.out.println("--- Pemuatan Suara Selesai ---");
     }
-
-
 
 
     public static void loadImage(String name, String path) {
@@ -67,8 +49,6 @@ public class AssetManager {
             e.printStackTrace();
         }
     }
-
-
 
 
     private static void loadSound(String name, String path) {
@@ -91,18 +71,13 @@ public class AssetManager {
     }
 
 
-
-
     public static BufferedImage getImage(String name) {
         return images.get(name.toUpperCase());
     }
-
-
 
 
     public static Clip getSound(String name) {
         return sounds.get(name.toUpperCase());
     }
 }
-
 
