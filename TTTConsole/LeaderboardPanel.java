@@ -1,5 +1,6 @@
 package TTTConsole;
 
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
@@ -9,12 +10,14 @@ import java.awt.event.MouseEvent;
 import java.text.NumberFormat;
 import java.util.List;
 
+
 public class LeaderboardPanel extends JPanel {
     private final CardLayout cardLayout;
     private final JPanel mainPanel;
     private final DatabaseManager dbManager;
     private JTable leaderboardTable;
     private final String[] columnNames = {"Rank", "Username", "Wins", "Losses", "Draws", "Win Rate"};
+
 
     public LeaderboardPanel(JPanel mainPanel, CardLayout cardLayout, DatabaseManager dbManager) {
         this.mainPanel = mainPanel;
@@ -23,15 +26,18 @@ public class LeaderboardPanel extends JPanel {
         initUI();
     }
 
+
     private void initUI() {
         setLayout(new BorderLayout(20, 20));
         setBackground(Theme.BG_MAIN);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+
         JLabel titleLabel = new JLabel("Leaderboard", SwingConstants.CENTER);
         titleLabel.setFont(Theme.FONT_TITLE);
         titleLabel.setForeground(Theme.TEXT_LIGHT);
         add(titleLabel, BorderLayout.NORTH);
+
 
         leaderboardTable = new JTable();
         leaderboardTable.setBackground(Theme.BG_PANEL);
@@ -43,22 +49,27 @@ public class LeaderboardPanel extends JPanel {
         leaderboardTable.getTableHeader().setForeground(Theme.TEXT_LIGHT);
         leaderboardTable.getTableHeader().setReorderingAllowed(false);
 
+
         leaderboardTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
 
         JScrollPane scrollPane = new JScrollPane(leaderboardTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 2));
         scrollPane.getViewport().setBackground(Theme.BG_PANEL);
         add(scrollPane, BorderLayout.CENTER);
 
+
         JButton backButton = new JButton("Back to Menu");
         styleButton(backButton);
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "MENU"));
+
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottomPanel.setBackground(Theme.BG_MAIN);
         bottomPanel.add(backButton);
         add(bottomPanel, BorderLayout.SOUTH);
     }
+
 
     public void refreshLeaderboard() {
         List<Player> players = dbManager.getLeaderboard();
@@ -69,8 +80,10 @@ public class LeaderboardPanel extends JPanel {
             }
         };
 
+
         NumberFormat percentFormat = NumberFormat.getPercentInstance();
         percentFormat.setMinimumFractionDigits(1);
+
 
         int rank = 1;
         for (Player p : players) {
@@ -85,8 +98,10 @@ public class LeaderboardPanel extends JPanel {
         }
         leaderboardTable.setModel(model);
 
+
         setColumnWidths();
     }
+
 
     /**
      * PERBAIKAN: Nilai untuk kolom "Rank" (indeks 0) dinaikkan dari 50 menjadi 75
@@ -101,6 +116,7 @@ public class LeaderboardPanel extends JPanel {
         columnModel.getColumn(4).setPreferredWidth(75);   // Draws
         columnModel.getColumn(5).setPreferredWidth(100);  // Win Rate
     }
+
 
     private void styleButton(JButton button) {
         button.setFont(Theme.FONT_BUTTON);
@@ -120,3 +136,4 @@ public class LeaderboardPanel extends JPanel {
         });
     }
 }
+

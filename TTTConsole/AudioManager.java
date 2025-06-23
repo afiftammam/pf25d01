@@ -1,21 +1,27 @@
 package TTTConsole;
 
+
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 
+
 public class AudioManager {
+
 
     public enum Volume {
         MUTE, LOW, MEDIUM, HIGH
     }
 
+
     // PERUBAHAN: Volume default diubah menjadi MEDIUM
     private static Volume currentVolume = Volume.MEDIUM;
+
 
     public static void playSound(String name) {
         if (currentVolume == Volume.MUTE) {
             return;
         }
+
 
         Clip clip = AssetManager.getSound(name);
         if (clip != null) {
@@ -30,13 +36,16 @@ public class AudioManager {
         }
     }
 
+
     public static void setVolume(Volume level) {
         currentVolume = level;
     }
 
+
     public static Volume getVolume() {
         return currentVolume;
     }
+
 
     private static void setClipVolume(Clip clip) {
         if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
@@ -52,3 +61,4 @@ public class AudioManager {
         }
     }
 }
+

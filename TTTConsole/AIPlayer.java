@@ -1,14 +1,18 @@
 package TTTConsole;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+
 public class AIPlayer {
+
 
     private final Seed aiSeed = Seed.NOUGHT;
     private final Seed playerSeed = Seed.CROSS;
     private final Random random = new Random();
+
 
     public int[] findBestMove(Board board, GameMain.Difficulty difficulty, GameMain.GameVariant variant) {
         // Mode Misere dengan tingkat kesulitan Medium akan disederhanakan menjadi Easy
@@ -16,6 +20,7 @@ public class AIPlayer {
         if (variant == GameMain.GameVariant.MISERE && difficulty == GameMain.Difficulty.MEDIUM) {
             difficulty = GameMain.Difficulty.EASY;
         }
+
 
         switch (difficulty) {
             case EASY:
@@ -28,9 +33,11 @@ public class AIPlayer {
         }
     }
 
+
     private int[] findMinimaxMove(Board board, GameMain.GameVariant variant) {
         int bestScore = Integer.MIN_VALUE;
         int[] bestMove = new int[]{-1, -1};
+
 
         for (int r = 0; r < board.ROWS; r++) {
             for (int c = 0; c < board.COLS; c++) {
@@ -50,11 +57,13 @@ public class AIPlayer {
         return bestMove;
     }
 
+
     private int minimax(Board board, int depth, boolean isMaximizing, int alpha, int beta, GameMain.GameVariant variant) {
         State result = board.getCurrentGameState();
         if (result != State.PLAYING) {
             return score(result, depth, variant);
         }
+
 
         // **PERBAIKAN LOGIKA:** Untuk papan besar, jika kedalaman pencarian tercapai,
         // gunakan fungsi evaluasi heuristik alih-alih mengembalikan 0.
@@ -63,6 +72,7 @@ public class AIPlayer {
         if (depth >= maxDepth) {
             return evaluateBoard(board);
         }
+
 
         if (isMaximizing) {
             int bestScore = Integer.MIN_VALUE;
@@ -101,10 +111,12 @@ public class AIPlayer {
         }
     }
 
+
     private int score(State result, int depth, GameMain.GameVariant variant) {
         if (result == State.DRAW) {
             return 0;
         }
+
 
         if (variant == GameMain.GameVariant.MISERE) {
             // Logika terbalik untuk Misere
@@ -123,6 +135,7 @@ public class AIPlayer {
         }
     }
 
+
     /**
      * **LOGIKA BARU:** Fungsi evaluasi heuristik untuk papan besar.
      * Memberikan skor pada posisi papan berdasarkan potensi kemenangan.
@@ -139,6 +152,7 @@ public class AIPlayer {
         return score;
     }
 
+
     private int evaluateLines(Board board, int dr, int dc) {
         int score = 0;
         for (int r = 0; r < board.ROWS; r++) {
@@ -146,6 +160,7 @@ public class AIPlayer {
                 // Pastikan window tidak keluar dari papan
                 if (c + (board.WIN_STREAK - 1) * dc >= 0 && c + (board.WIN_STREAK - 1) * dc < board.COLS &&
                         r + (board.WIN_STREAK - 1) * dr >= 0 && r + (board.WIN_STREAK - 1) * dr < board.ROWS) {
+
 
                     int aiPieces = 0;
                     int playerPieces = 0;
@@ -162,6 +177,7 @@ public class AIPlayer {
         }
         return score;
     }
+
 
     private int evaluateSingleLine(int aiPieces, int playerPieces) {
         int score = 0;
@@ -184,6 +200,7 @@ public class AIPlayer {
         return score;
     }
 
+
     private int[] findMediumMove(Board board) {
         // Cek apakah AI bisa menang dalam satu langkah
         for (int r = 0; r < board.ROWS; r++) {
@@ -199,6 +216,7 @@ public class AIPlayer {
             }
         }
 
+
         // Cek apakah pemain bisa menang di langkah berikutnya, lalu blokir
         for (int r = 0; r < board.ROWS; r++) {
             for (int c = 0; c < board.COLS; c++) {
@@ -213,10 +231,12 @@ public class AIPlayer {
             }
         }
 
+
         // Ambil tengah jika papan 3x3 dan kosong
         if (board.ROWS == 3 && board.COLS == 3 && board.isValidMove(1, 1)) {
             return new int[]{1, 1};
         }
+
 
         // Ambil sudut secara acak jika kosong
         List<int[]> cornerMoves = new ArrayList<>();
@@ -225,12 +245,15 @@ public class AIPlayer {
         if (board.isValidMove(board.ROWS - 1, 0)) cornerMoves.add(new int[]{board.ROWS - 1, 0});
         if (board.isValidMove(board.ROWS - 1, board.COLS - 1)) cornerMoves.add(new int[]{board.ROWS - 1, board.COLS - 1});
 
+
         if (!cornerMoves.isEmpty()) {
             return cornerMoves.get(random.nextInt(cornerMoves.size()));
         }
 
+
         return findRandomMove(board);
     }
+
 
     private int[] findRandomMove(Board board) {
         List<int[]> emptyCells = new ArrayList<>();
@@ -245,3 +268,4 @@ public class AIPlayer {
         return emptyCells.get(random.nextInt(emptyCells.size()));
     }
 }
+

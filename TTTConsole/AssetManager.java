@@ -1,4 +1,8 @@
+// afiftammam/pf25d01/pf25d01-acd6714e758bd2a8398fc7d001fa7670d6d6b4ac/TTTConsole/AssetManager.java
 package TTTConsole;
+
+
+
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
@@ -8,19 +12,30 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+
+
+
 public class AssetManager {
+
+
+
 
     private static final Map<String, BufferedImage> images = new HashMap<>();
     private static final Map<String, Clip> sounds = new HashMap<>();
 
+
+
+
     public static void loadAssets() {
         System.out.println("--- Memulai Pemuatan Aset ---");
 
-        // Memuat semua gambar yang dibutuhkan
-        loadImage("BACKGROUND", "TTTConsole/images/background.png");
-        loadImage("CROSS", "TTTConsole/images/ex.png");
-        loadImage("NOUGHT", "TTTConsole/images/bulat.png");
-        System.out.println("--- Pemuatan Gambar Selesai ---");
+
+
+
+        // PERUBAHAN: Pemuatan gambar dipindahkan ke kelas Theme
+        // untuk memungkinkan pemuatan aset dinamis berdasarkan tema yang dipilih.
+
+
 
 
         // Memuat semua suara yang dibutuhkan
@@ -34,7 +49,10 @@ public class AssetManager {
         System.out.println("--- Pemuatan Suara Selesai ---");
     }
 
-    private static void loadImage(String name, String path) {
+
+
+
+    public static void loadImage(String name, String path) {
         System.out.println("Mencari gambar '" + name + "' di -> " + path);
         try {
             URL url = AssetManager.class.getClassLoader().getResource(path);
@@ -49,6 +67,9 @@ public class AssetManager {
             e.printStackTrace();
         }
     }
+
+
+
 
     private static void loadSound(String name, String path) {
         System.out.println("Mencari suara '" + name + "' di -> " + path);
@@ -69,11 +90,19 @@ public class AssetManager {
         }
     }
 
+
+
+
     public static BufferedImage getImage(String name) {
         return images.get(name.toUpperCase());
     }
+
+
+
 
     public static Clip getSound(String name) {
         return sounds.get(name.toUpperCase());
     }
 }
+
+
