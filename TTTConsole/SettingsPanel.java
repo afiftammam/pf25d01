@@ -9,7 +9,6 @@ import java.awt.*;
 public class SettingsPanel extends JPanel {
 
 
-    // PERBAIKAN: Deklarasikan variabel sebagai field/anggota kelas
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
     private final JFrame mainFrame;
@@ -26,17 +25,26 @@ public class SettingsPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
 
+        // Judul Panel
         JLabel titleLabel = new JLabel("Settings", SwingConstants.CENTER);
         titleLabel.setFont(Theme.FONT_TITLE);
         titleLabel.setForeground(Theme.TEXT_LIGHT);
         add(titleLabel, BorderLayout.NORTH);
 
 
-        JPanel themePanel = new JPanel();
-        themePanel.setOpaque(false);
-        themePanel.setLayout(new BoxLayout(themePanel, BoxLayout.Y_AXIS));
+        // Panel untuk semua tombol pengaturan
+        JPanel settingsOptionsPanel = new JPanel();
+        settingsOptionsPanel.setOpaque(false);
+        settingsOptionsPanel.setLayout(new BoxLayout(settingsOptionsPanel, BoxLayout.Y_AXIS));
 
 
+        // Tombol Pengaturan Audio
+        JButton audioButton = new JButton("Audio Settings");
+        styleButton(audioButton);
+        audioButton.addActionListener(e -> cardLayout.show(mainPanel, "AUDIO_SETTINGS"));
+
+
+        // --- Tombol Tema ---
         JLabel themeLabel = new JLabel("Select Theme:");
         themeLabel.setFont(Theme.FONT_STATUS);
         themeLabel.setForeground(Theme.TEXT_LIGHT);
@@ -45,7 +53,6 @@ public class SettingsPanel extends JPanel {
 
         JButton mainThemeButton = new JButton("Main Theme");
         styleButton(mainThemeButton);
-        mainThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainThemeButton.addActionListener(e -> {
             Theme.applyMainTheme();
             Theme.updateUI(mainFrame);
@@ -54,23 +61,30 @@ public class SettingsPanel extends JPanel {
 
         JButton cyberThemeButton = new JButton("Cyber Theme");
         styleButton(cyberThemeButton);
-        cyberThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         cyberThemeButton.addActionListener(e -> {
             Theme.applyCyberTheme();
             Theme.updateUI(mainFrame);
         });
 
 
-        themePanel.add(themeLabel);
-        themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        themePanel.add(mainThemeButton);
-        themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        themePanel.add(cyberThemeButton);
+        // Menambahkan komponen ke panel opsi
+        settingsOptionsPanel.add(audioButton);
+        settingsOptionsPanel.add(Box.createRigidArea(new Dimension(0, 40)));
+        settingsOptionsPanel.add(themeLabel);
+        settingsOptionsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        settingsOptionsPanel.add(mainThemeButton);
+        settingsOptionsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        settingsOptionsPanel.add(cyberThemeButton);
 
 
-        add(themePanel, BorderLayout.CENTER);
+        // PERBAIKAN: Panel pembungkus untuk mencegah peregangan saat fullscreen
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setOpaque(false);
+        centerWrapper.add(settingsOptionsPanel);
+        add(centerWrapper, BorderLayout.CENTER);
 
 
+        // Tombol Kembali
         JButton backButton = new JButton("Back to Menu");
         styleButton(backButton);
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "MENU"));
@@ -92,7 +106,7 @@ public class SettingsPanel extends JPanel {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setPreferredSize(new Dimension(280, 65));
         button.setMaximumSize(new Dimension(280, 65));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 }
-
 
