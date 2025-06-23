@@ -1,12 +1,15 @@
 package TTTConsole;
 
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 
+
 public class Cell implements Serializable {
     Seed content;
     int row, col;
+
 
     public Cell(int row, int col) {
         this.row = row;
@@ -14,9 +17,11 @@ public class Cell implements Serializable {
         newGame();
     }
 
+
     public void newGame() {
         content = Seed.NO_SEED;
     }
+
 
     /**
      * Versi final: Metode paint hanya menggambar gambar simbol X atau O.
@@ -28,6 +33,7 @@ public class Cell implements Serializable {
             return;
         }
 
+
         BufferedImage symbolImage = null;
         if (content == Seed.CROSS) {
             symbolImage = AssetManager.getImage("CROSS");
@@ -35,17 +41,21 @@ public class Cell implements Serializable {
             symbolImage = AssetManager.getImage("NOUGHT");
         }
 
+
         // Gambar simbol jika ada
         if (symbolImage != null) {
             int cellSize = Board.CELL_SIZE;
             // Padding agar gambar tidak terlalu mepet ke tepi sel
             int padding = (int) (cellSize * 0.15); // 15% padding
 
+
             int x = col * cellSize + padding;
             int y = row * cellSize + padding;
             int size = cellSize - (2 * padding);
+
 
             g2d.drawImage(symbolImage, x, y, size, size, null);
         }
     }
 }
+
