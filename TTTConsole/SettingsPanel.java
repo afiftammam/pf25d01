@@ -1,5 +1,6 @@
 package TTTConsole;
-
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import javax.swing.*;
 import java.awt.*;
 
@@ -74,6 +75,7 @@ public class SettingsPanel extends JPanel {
         bottomPanel.setOpaque(false);
         bottomPanel.add(backButton);
         add(bottomPanel, BorderLayout.SOUTH);
+
     }
 
     private void styleButton(JButton button) {
@@ -86,4 +88,5 @@ public class SettingsPanel extends JPanel {
         button.setPreferredSize(new Dimension(280, 65));
         button.setMaximumSize(new Dimension(280, 65));
     }
+
 }

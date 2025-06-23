@@ -1,5 +1,4 @@
 package TTTConsole;
-
 import javax.swing.*;
 import java.sql.*;
 import java.util.ArrayList;

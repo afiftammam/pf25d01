@@ -30,6 +30,8 @@ public class MainMenuPanel extends JPanel {
     public void setGamePanel(GameMain gameMain) { this.gameMain = gameMain; }
     public void setLeaderboardPanel(LeaderboardPanel leaderboardPanel) { this.leaderboardPanel = leaderboardPanel; }
 
+
+
     private void stylePrimaryButton(JButton button) {
         button.setFont(Theme.FONT_BUTTON);
         button.setBackground(Theme.ACCENT_COLOR);

@@ -1,8 +1,10 @@
 package TTTConsole;
 
-import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 
