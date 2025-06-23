@@ -1,8 +1,21 @@
+// C:\Users\Akhtar\pf25d01\TTTConsole\Game.java
 package TTTConsole;
+
+
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities; // PERBAIKAN: Import eksplisit
+import javax.swing.UIManager;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+
+
 
 
 public class Game {
@@ -10,11 +23,16 @@ public class Game {
     private static GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 
 
+
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+            // Memanggil kelas dari package yang sama
             AssetManager.loadAssets();
-            Theme.applySpaceTheme();
+            Theme.applyMainTheme();
             AudioManager.setVolume(AudioManager.Volume.HIGH);
+
+
 
 
             UIManager.put("Panel.background", Theme.BG_MAIN);
@@ -34,24 +52,35 @@ public class Game {
             ));
 
 
+
+
             JFrame frame = new JFrame("Tic Tac Toe International");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(true);
+
+
 
 
             CardLayout cardLayout = new CardLayout();
             JPanel mainPanel = new JPanel(cardLayout);
 
 
+
+
             DatabaseManager dbManager = new DatabaseManager();
+
+
 
 
             MainMenuPanel mainMenu = new MainMenuPanel(mainPanel, cardLayout);
             GameMain gameMain = new GameMain(mainPanel, cardLayout, dbManager);
             LeaderboardPanel leaderboardPanel = new LeaderboardPanel(mainPanel, cardLayout, dbManager);
             SettingsPanel settingsPanel = new SettingsPanel(mainPanel, cardLayout, frame);
-            // PERUBAHAN: Tambahkan panel baru untuk menu online
             OnlineMenuPanel onlineMenu = new OnlineMenuPanel(mainPanel, cardLayout, gameMain, dbManager);
+
+
+
+
 
 
 
@@ -60,8 +89,11 @@ public class Game {
             mainPanel.add(gameMain, "GAME");
             mainPanel.add(leaderboardPanel, "LEADERBOARD");
             mainPanel.add(settingsPanel, "SETTINGS");
-            // PERUBAHAN: Daftarkan panel online ke card layout
             mainPanel.add(onlineMenu, "ONLINE_MENU");
+
+
+
+
 
 
 
@@ -70,13 +102,16 @@ public class Game {
             mainMenu.setLeaderboardPanel(leaderboardPanel);
 
 
+
+
             frame.add(mainPanel);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
 
 
-            // Frame fullscreen (alt + enter)
+
+
             frame.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
@@ -89,6 +124,8 @@ public class Game {
             frame.requestFocusInWindow();
         });
     }
+
+
 
 
     private static void toggleFullscreen(JFrame frame) {

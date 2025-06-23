@@ -1,9 +1,13 @@
+// afiftammam/pf25d01/pf25d01-acd6714e758bd2a8398fc7d001fa7670d6d6b4ac/TTTConsole/Theme.java
 package TTTConsole;
+
 
 import javax.swing.*;
 import java.awt.*;
 
+
 public class Theme {
+
 
     public static Color BG_MAIN = new Color(13, 29, 39);
     public static Color BG_PANEL = new Color(30, 52, 69);
@@ -15,23 +19,13 @@ public class Theme {
     public static Color WIN_LINE = new Color(255, 255, 255, 220);
     public static Color HOVER = new Color(255, 255, 255, 30);
 
+
     public static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 72);
     public static final Font FONT_BUTTON = new Font("Segoe UI", Font.BOLD, 22);
     public static final Font FONT_STATUS = new Font("Segoe UI", Font.BOLD, 18);
 
-    public static void applySpaceTheme() {
-        BG_MAIN = new Color(10, 15, 30);
-        BG_PANEL = new Color(25, 40, 65);
-        ACCENT_COLOR = new Color(190, 70, 255);
-        TEXT_LIGHT = new Color(220, 220, 240);
-        TEXT_DARK = new Color(10, 15, 30);
-        CROSS = new Color(180, 255, 50);
-        NOUGHT = new Color(255, 160, 50);
-        WIN_LINE = new Color(255, 255, 255, 220);
-        HOVER = new Color(190, 70, 255, 40);
-    }
 
-    public static void applyCyberTheme() {
+    public static void applyMainTheme() {
         BG_MAIN = new Color(13, 29, 39);
         BG_PANEL = new Color(30, 52, 69);
         ACCENT_COLOR = new Color(51, 224, 206);
@@ -41,22 +35,39 @@ public class Theme {
         NOUGHT = new Color(242, 169, 114);
         WIN_LINE = new Color(255, 255, 255, 220);
         HOVER = new Color(255, 255, 255, 30);
+
+
+        // Muat aset untuk Main Theme
+        AssetManager.loadImage("BACKGROUND", "TTTConsole/images/backgroundThemeMain.png");
+        AssetManager.loadImage("CROSS", "TTTConsole/images/exThemeMain.png");
+        AssetManager.loadImage("NOUGHT", "TTTConsole/images/bulatThemeMain.png");
     }
 
-    public static void applyMintTheme() {
-        BG_MAIN = new Color(240, 255, 240);
-        BG_PANEL = new Color(204, 235, 221);
-        ACCENT_COLOR = new Color(102, 204, 153);
-        TEXT_LIGHT = new Color(10, 38, 10);
-        TEXT_DARK = new Color(255, 255, 255);
-        CROSS = new Color(255, 105, 97);
-        NOUGHT = new Color(77, 121, 255);
-        WIN_LINE = new Color(0, 0, 0, 200);
-        HOVER = new Color(0, 0, 0, 20);
+
+    public static void applyCyberTheme() {
+        // Tema ini sebelumnya adalah "Space Theme"
+        BG_MAIN = new Color(10, 15, 30);
+        BG_PANEL = new Color(25, 40, 65);
+        ACCENT_COLOR = new Color(190, 70, 255);
+        TEXT_LIGHT = new Color(220, 220, 240);
+        TEXT_DARK = new Color(10, 15, 30);
+        CROSS = new Color(180, 255, 50);
+        NOUGHT = new Color(255, 160, 50);
+        WIN_LINE = new Color(255, 255, 255, 220);
+        HOVER = new Color(190, 70, 255, 40);
+
+
+        // Muat aset untuk Cyber Theme (aset original)
+        AssetManager.loadImage("BACKGROUND", "TTTConsole/images/background.png");
+        AssetManager.loadImage("CROSS", "TTTConsole/images/ex.png");
+        AssetManager.loadImage("NOUGHT", "TTTConsole/images/bulat.png");
     }
+
 
     public static void updateUI(JFrame frame) {
         SwingUtilities.updateComponentTreeUI(frame);
         frame.pack();
     }
 }
+
+

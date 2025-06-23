@@ -1,6 +1,7 @@
+// C:\Users\Akhtar\pf25d01\TTTConsole\SettingsPanel.java
 package TTTConsole;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -8,6 +9,7 @@ import java.awt.*;
 public class SettingsPanel extends JPanel {
 
 
+    // PERBAIKAN: Deklarasikan variabel sebagai field/anggota kelas
     private final JPanel mainPanel;
     private final CardLayout cardLayout;
     private final JFrame mainFrame;
@@ -41,11 +43,11 @@ public class SettingsPanel extends JPanel {
         themeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 
-        JButton spaceThemeButton = new JButton("Space Theme");
-        styleButton(spaceThemeButton);
-        spaceThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        spaceThemeButton.addActionListener(e -> {
-            Theme.applySpaceTheme();
+        JButton mainThemeButton = new JButton("Main Theme");
+        styleButton(mainThemeButton);
+        mainThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainThemeButton.addActionListener(e -> {
+            Theme.applyMainTheme();
             Theme.updateUI(mainFrame);
         });
 
@@ -59,22 +61,11 @@ public class SettingsPanel extends JPanel {
         });
 
 
-        JButton mintThemeButton = new JButton("Mint Theme");
-        styleButton(mintThemeButton);
-        mintThemeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mintThemeButton.addActionListener(e -> {
-            Theme.applyMintTheme();
-            Theme.updateUI(mainFrame);
-        });
-
-
         themePanel.add(themeLabel);
         themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        themePanel.add(spaceThemeButton);
+        themePanel.add(mainThemeButton);
         themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
         themePanel.add(cyberThemeButton);
-        themePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        themePanel.add(mintThemeButton);
 
 
         add(themePanel, BorderLayout.CENTER);
@@ -89,8 +80,6 @@ public class SettingsPanel extends JPanel {
         bottomPanel.setOpaque(false);
         bottomPanel.add(backButton);
         add(bottomPanel, BorderLayout.SOUTH);
-
-
     }
 
 
@@ -104,7 +93,6 @@ public class SettingsPanel extends JPanel {
         button.setPreferredSize(new Dimension(280, 65));
         button.setMaximumSize(new Dimension(280, 65));
     }
-
-
 }
+
 
