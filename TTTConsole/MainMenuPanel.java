@@ -1,3 +1,4 @@
+// afiftammam/pf25d01/pf25d01-d5e914db64e716630e5da884f8aadbbd72a6a70b/TTTConsole/MainMenuPanel.java
 package TTTConsole;
 
 
@@ -32,12 +33,21 @@ public class MainMenuPanel extends JPanel {
     }
 
 
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Image bg = AssetManager.getImage("MAIN_MENU_BG");
+        if (bg != null) {
+            g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+        }
+    }
+
+
     public void setGamePanel(GameMain gameMain) { this.gameMain = gameMain; }
     public void setLeaderboardPanel(LeaderboardPanel leaderboardPanel) { this.leaderboardPanel = leaderboardPanel; }
 
 
-
-
+    // ... sisa dari kode MainMenuPanel.java tetap sama ...
 
 
     private void stylePrimaryButton(JButton button) {
@@ -60,6 +70,8 @@ public class MainMenuPanel extends JPanel {
     }
 
 
+
+
     private void styleSecondaryButton(JButton button) {
         button.setFont(Theme.FONT_BUTTON);
         button.setBackground(Theme.BG_PANEL);
@@ -80,6 +92,8 @@ public class MainMenuPanel extends JPanel {
     }
 
 
+
+
     private <E> JComboBox<E> createStyledComboBox(E[] items) {
         JComboBox<E> comboBox = new JComboBox<>(items);
         comboBox.setFont(Theme.FONT_STATUS);
@@ -88,6 +102,8 @@ public class MainMenuPanel extends JPanel {
         ((JComponent) comboBox.getRenderer()).setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         return comboBox;
     }
+
+
 
 
     /**
@@ -99,25 +115,37 @@ public class MainMenuPanel extends JPanel {
         panel.setOpaque(false);
 
 
+
+
         // Border luar dengan judul
         Border lineBorder = BorderFactory.createLineBorder(Theme.ACCENT_COLOR, 1, true);
         TitledBorder titledBorder = BorderFactory.createTitledBorder(lineBorder, " " + title + " ", TitledBorder.LEFT, TitledBorder.TOP, Theme.FONT_STATUS.deriveFont(16f), Theme.TEXT_LIGHT);
+
+
 
 
         // Border dalam untuk padding
         Border innerPadding = new EmptyBorder(15, 10, 10, 10); // top, left, bottom, right
 
 
+
+
         // Menggabungkan keduanya
         panel.setBorder(BorderFactory.createCompoundBorder(titledBorder, innerPadding));
+
+
 
 
         return panel;
     }
 
 
+
+
     private void initUI() {
         setLayout(new BorderLayout());
+
+
 
 
         JLabel titleLabel = new JLabel("Tic-Tac-Toe");
@@ -128,11 +156,15 @@ public class MainMenuPanel extends JPanel {
         add(titleLabel, BorderLayout.NORTH);
 
 
+
+
         JPanel centerContainer = new JPanel();
         centerContainer.setOpaque(false);
         centerContainer.setLayout(new BoxLayout(centerContainer, BoxLayout.Y_AXIS));
         centerContainer.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
         add(centerContainer, BorderLayout.CENTER);
+
+
 
 
         // --- Tombol-tombol ---
@@ -141,14 +173,20 @@ public class MainMenuPanel extends JPanel {
         onlineButton.addActionListener(e -> cardLayout.show(mainPanel, "ONLINE_MENU"));
 
 
+
+
         JButton pvaButton = new JButton("Play Solo (vs AI)");
         stylePrimaryButton(pvaButton);
         pvaButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_AI));
 
 
+
+
         JButton pvpButton = new JButton("Play Local (2 Players)");
         stylePrimaryButton(pvpButton);
         pvpButton.addActionListener(e -> startGame(GameMain.GameMode.PLAYER_VS_PLAYER));
+
+
 
 
         JButton leaderboardButton = new JButton("Leaderboard");
@@ -159,9 +197,13 @@ public class MainMenuPanel extends JPanel {
         });
 
 
+
+
         JButton settingsButton = new JButton("Settings");
         styleSecondaryButton(settingsButton);
         settingsButton.addActionListener(e -> cardLayout.show(mainPanel, "SETTINGS"));
+
+
 
 
         // --- Panel Opsi (Untuk Local & Solo) ---
@@ -170,10 +212,14 @@ public class MainMenuPanel extends JPanel {
         optionsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 
+
+
         GridBagConstraints gbcOptions = new GridBagConstraints();
         gbcOptions.fill = GridBagConstraints.HORIZONTAL;
         gbcOptions.insets = new Insets(2, 5, 2, 5);
         gbcOptions.weightx = 1.0;
+
+
 
 
         boardSizeSelector = createStyledComboBox(new String[]{"3x3", "5x5", "7x7"});
@@ -182,9 +228,13 @@ public class MainMenuPanel extends JPanel {
         difficultySelector.setSelectedItem(GameMain.Difficulty.HARD);
 
 
+
+
         difficultyLabel = new JLabel("AI Difficulty:");
         JLabel sizeLabel = new JLabel("Grid Size:");
         JLabel variantLabel = new JLabel("Game Rules:");
+
+
 
 
         for (JLabel label : new JLabel[]{sizeLabel, variantLabel, difficultyLabel}) {
@@ -193,16 +243,24 @@ public class MainMenuPanel extends JPanel {
         }
 
 
+
+
         gbcOptions.gridx = 0; gbcOptions.gridy = 0; gbcOptions.weightx = 0.4; optionsPanel.add(sizeLabel, gbcOptions);
         gbcOptions.gridx = 1; gbcOptions.gridy = 0; gbcOptions.weightx = 0.6; optionsPanel.add(boardSizeSelector, gbcOptions);
+
+
 
 
         gbcOptions.gridx = 0; gbcOptions.gridy = 1; optionsPanel.add(variantLabel, gbcOptions);
         gbcOptions.gridx = 1; gbcOptions.gridy = 1; optionsPanel.add(variantSelector, gbcOptions);
 
 
+
+
         gbcOptions.gridx = 0; gbcOptions.gridy = 2; optionsPanel.add(difficultyLabel, gbcOptions);
         gbcOptions.gridx = 1; gbcOptions.gridy = 2; optionsPanel.add(difficultySelector, gbcOptions);
+
+
 
 
         // --- Susun Komponen di Panel Tengah ---
@@ -216,6 +274,8 @@ public class MainMenuPanel extends JPanel {
         centerContainer.add(Box.createVerticalStrut(20));
 
 
+
+
         JPanel otherButtonsPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         otherButtonsPanel.setOpaque(false);
         otherButtonsPanel.setMaximumSize(new Dimension(350, 55));
@@ -226,9 +286,13 @@ public class MainMenuPanel extends JPanel {
     }
 
 
+
+
     private void startGame(GameMain.GameMode mode) {
         try {
             if (gameMain == null) return;
+
+
 
 
             boolean isAiMode = (mode == GameMain.GameMode.PLAYER_VS_AI);
@@ -236,9 +300,13 @@ public class MainMenuPanel extends JPanel {
             difficultySelector.setVisible(isAiMode);
 
 
+
+
             int size = parseSize((String) boardSizeSelector.getSelectedItem());
             GameMain.GameVariant variant = (GameMain.GameVariant) variantSelector.getSelectedItem();
             GameMain.Difficulty difficulty = (GameMain.Difficulty) difficultySelector.getSelectedItem();
+
+
 
 
             gameMain.setDifficulty(difficulty);
@@ -246,10 +314,14 @@ public class MainMenuPanel extends JPanel {
             cardLayout.show(mainPanel, "GAME");
 
 
+
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
+
+
 
 
     private int parseSize(String sizeStr) {
