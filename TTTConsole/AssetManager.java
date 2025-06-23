@@ -1,5 +1,6 @@
 package TTTConsole;
 
+
 import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
 import java.awt.image.BufferedImage;
@@ -8,19 +9,25 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class AssetManager {
+
 
     private static final Map<String, BufferedImage> images = new HashMap<>();
     private static final Map<String, Clip> sounds = new HashMap<>();
 
+
     public static void loadAssets() {
         System.out.println("--- Memulai Pemuatan Aset ---");
+
 
         // Memuat semua gambar yang dibutuhkan
         loadImage("BACKGROUND", "TTTConsole/images/background.png");
         loadImage("CROSS", "TTTConsole/images/ex.png");
         loadImage("NOUGHT", "TTTConsole/images/bulat.png");
         System.out.println("--- Pemuatan Gambar Selesai ---");
+
+
 
 
         // Memuat semua suara yang dibutuhkan
@@ -33,6 +40,7 @@ public class AssetManager {
         loadSound("DRAW", "TTTConsole/audio/Draw.wav");
         System.out.println("--- Pemuatan Suara Selesai ---");
     }
+
 
     private static void loadImage(String name, String path) {
         System.out.println("Mencari gambar '" + name + "' di -> " + path);
@@ -49,6 +57,7 @@ public class AssetManager {
             e.printStackTrace();
         }
     }
+
 
     private static void loadSound(String name, String path) {
         System.out.println("Mencari suara '" + name + "' di -> " + path);
@@ -69,11 +78,14 @@ public class AssetManager {
         }
     }
 
+
     public static BufferedImage getImage(String name) {
         return images.get(name.toUpperCase());
     }
+
 
     public static Clip getSound(String name) {
         return sounds.get(name.toUpperCase());
     }
 }
+

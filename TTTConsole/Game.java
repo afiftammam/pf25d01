@@ -4,15 +4,18 @@ import java.awt.event.KeyEvent;
 import javax.swing.*;
 import java.awt.*;
 
+
 public class Game {
     private static boolean isFullscreen = false;
     private static GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             AssetManager.loadAssets();
             Theme.applySpaceTheme();
             AudioManager.setVolume(AudioManager.Volume.HIGH);
+
 
             UIManager.put("Panel.background", Theme.BG_MAIN);
             UIManager.put("OptionPane.background", Theme.BG_MAIN);
@@ -30,14 +33,18 @@ public class Game {
                     BorderFactory.createEmptyBorder(5, 5, 5, 5)
             ));
 
+
             JFrame frame = new JFrame("Tic Tac Toe International");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(true);
 
+
             CardLayout cardLayout = new CardLayout();
             JPanel mainPanel = new JPanel(cardLayout);
 
+
             DatabaseManager dbManager = new DatabaseManager();
+
 
             MainMenuPanel mainMenu = new MainMenuPanel(mainPanel, cardLayout);
             GameMain gameMain = new GameMain(mainPanel, cardLayout, dbManager);
@@ -45,6 +52,8 @@ public class Game {
             SettingsPanel settingsPanel = new SettingsPanel(mainPanel, cardLayout, frame);
             // PERUBAHAN: Tambahkan panel baru untuk menu online
             OnlineMenuPanel onlineMenu = new OnlineMenuPanel(mainPanel, cardLayout, gameMain, dbManager);
+
+
 
 
             mainPanel.add(mainMenu, "MENU");
@@ -55,13 +64,17 @@ public class Game {
             mainPanel.add(onlineMenu, "ONLINE_MENU");
 
 
+
+
             mainMenu.setGamePanel(gameMain);
             mainMenu.setLeaderboardPanel(leaderboardPanel);
+
 
             frame.add(mainPanel);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
+
 
             // Frame fullscreen (alt + enter)
             frame.addKeyListener(new KeyAdapter() {
@@ -69,13 +82,14 @@ public class Game {
                 public void keyPressed(KeyEvent e) {
                     if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isAltDown()) {
                         toggleFullscreen(frame);
-        }
-    }
-});
+                    }
+                }
+            });
             frame.setFocusable(true);
             frame.requestFocusInWindow();
         });
     }
+
 
     private static void toggleFullscreen(JFrame frame) {
         frame.dispose();
@@ -90,3 +104,5 @@ public class Game {
         isFullscreen = !isFullscreen;
     }
 }
+
+
