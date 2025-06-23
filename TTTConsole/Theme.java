@@ -1,4 +1,4 @@
-// afiftammam/pf25d01/pf25d01-acd6714e758bd2a8398fc7d001fa7670d6d6b4ac/TTTConsole/Theme.java
+// afiftammam/pf25d01/pf25d01-d5e914db64e716630e5da884f8aadbbd72a6a70b/TTTConsole/Theme.java
 package TTTConsole;
 
 
@@ -39,6 +39,7 @@ public class Theme {
 
         // Muat aset untuk Main Theme
         AssetManager.loadImage("BACKGROUND", "TTTConsole/images/backgroundThemeMain.png");
+        AssetManager.loadImage("MAIN_MENU_BG", "TTTConsole/images/mainMenuThemeMain.png");
         AssetManager.loadImage("CROSS", "TTTConsole/images/exThemeMain.png");
         AssetManager.loadImage("NOUGHT", "TTTConsole/images/bulatThemeMain.png");
     }
@@ -57,10 +58,11 @@ public class Theme {
         HOVER = new Color(190, 70, 255, 40);
 
 
-        // Muat aset untuk Cyber Theme (aset original)
-        AssetManager.loadImage("BACKGROUND", "TTTConsole/images/background.png");
-        AssetManager.loadImage("CROSS", "TTTConsole/images/ex.png");
-        AssetManager.loadImage("NOUGHT", "TTTConsole/images/bulat.png");
+        // Muat aset untuk Cyber Theme
+        AssetManager.loadImage("BACKGROUND", "TTTConsole/images/backgroundThemeCyber.png");
+        AssetManager.loadImage("MAIN_MENU_BG", "TTTConsole/images/mainMenuThemeCyber.png");
+        AssetManager.loadImage("CROSS", "TTTConsole/images/exThemeCyber.png");
+        AssetManager.loadImage("NOUGHT", "TTTConsole/images/bulatThemeCyber.png");
     }
 
 
@@ -69,5 +71,4 @@ public class Theme {
         frame.pack();
     }
 }
-
 
