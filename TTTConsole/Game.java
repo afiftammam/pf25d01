@@ -25,16 +25,15 @@ public class Game {
             // Memanggil kelas dari package yang sama
             AssetManager.loadAssets();
             Theme.applyMainTheme();
+
             // Inisialisasi AudioManager dengan volume awal
             AudioManager.setMasterVolume(0.8f);
             AudioManager.setMusicVolume(0.7f);
             AudioManager.setSfxVolume(1.0f);
 
-
             // Pengaturan UIManager
             UIManager.put("Panel.background", Theme.BG_MAIN);
             // ... (sisa kode UIManager.put)
-
 
             JFrame frame = new JFrame("Tic Tac Toe International");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -67,17 +66,14 @@ public class Game {
             // Tambahkan panel audio ke layout
             mainPanel.add(audioSettingsPanel, "AUDIO_SETTINGS");
 
-
             // Menghubungkan panel
             mainMenu.setGamePanel(gameMain);
             mainMenu.setLeaderboardPanel(leaderboardPanel);
-
 
             frame.add(mainPanel);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-
 
             // Listener untuk fullscreen
             frame.addKeyListener(new KeyAdapter() {
@@ -95,14 +91,14 @@ public class Game {
 
 
     private static void toggleFullscreen(JFrame frame) {
-        frame.dispose(); // Lepaskan frame untuk mengubah dekorasi
+        frame.dispose();
         if (!isFullscreen) {
             frame.setUndecorated(true);
             device.setFullScreenWindow(frame);
         } else {
             device.setFullScreenWindow(null);
             frame.setUndecorated(false);
-            frame.setVisible(true); // Tampilkan lagi setelah undecorated di-set
+            frame.setVisible(true);
             frame.pack();
             frame.setLocationRelativeTo(null);
         }
