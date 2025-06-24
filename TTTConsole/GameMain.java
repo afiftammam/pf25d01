@@ -15,7 +15,7 @@ public class GameMain extends JPanel {
     private State currentState;
     private Seed currentPlayer;
     private GameMode gameMode;
-    private Difficulty currentDifficulty = Difficulty.HARD;
+    private Difficulty currentDifficulty = Difficulty.EASY;
     private GameVariant currentGameVariant = GameVariant.STANDARD;
 
     private String nameX = "Player X";
