@@ -15,8 +15,7 @@ public class AIPlayer {
 
 
     public int[] findBestMove(Board board, GameMain.Difficulty difficulty, GameMain.GameVariant variant) {
-        // Mode Misere dengan tingkat kesulitan Medium akan disederhanakan menjadi Easy
-        // karena logika Medium (menyerang/bertahan) tidak cocok untuk Misere.
+
         if (variant == GameMain.GameVariant.MISERE && difficulty == GameMain.Difficulty.MEDIUM) {
             difficulty = GameMain.Difficulty.EASY;
         }
@@ -43,7 +42,7 @@ public class AIPlayer {
             for (int c = 0; c < board.COLS; c++) {
                 if (board.isValidMove(r, c)) {
                     board.placeSeed(aiSeed, r, c);
-                    // Dapatkan skor untuk langkah ini menggunakan algoritma minimax
+
                     int score = minimax(board, 0, false, Integer.MIN_VALUE, Integer.MAX_VALUE, variant);
                     board.placeSeed(Seed.NO_SEED, r, c); // Batalkan langkah
                     if (score > bestScore) {
@@ -64,11 +63,7 @@ public class AIPlayer {
             return score(result, depth, variant);
         }
 
-
-        // **PERBAIKAN LOGIKA:** Untuk papan besar, jika kedalaman pencarian tercapai,
-        // gunakan fungsi evaluasi heuristik alih-alih mengembalikan 0.
-        // Ini membuat AI lebih "cerdas" dalam memilih posisi strategis.
-        int maxDepth = (board.ROWS > 3) ? 4 : 8; // Kedalaman pencarian disesuaikan dengan ukuran papan
+        int maxDepth = (board.ROWS > 3) ? 4 : 8;
         if (depth >= maxDepth) {
             return evaluateBoard(board);
         }
@@ -136,12 +131,8 @@ public class AIPlayer {
     }
 
 
-    /**
-     * **LOGIKA BARU:** Fungsi evaluasi heuristik untuk papan besar.
-     * Memberikan skor pada posisi papan berdasarkan potensi kemenangan.
-     * @param board Papan permainan saat ini.
-     * @return Skor numerik yang merepresentasikan seberapa bagus posisi ini untuk AI.
-     */
+
+
     private int evaluateBoard(Board board) {
         int score = 0;
         // Evaluasi baris, kolom, dan diagonal
@@ -182,16 +173,13 @@ public class AIPlayer {
     private int evaluateSingleLine(int aiPieces, int playerPieces) {
         int score = 0;
         if (aiPieces > 0 && playerPieces > 0) {
-            // Garis ini diblokir oleh kedua pemain, tidak ada potensi.
             return 0;
         } else if (aiPieces > 0) {
-            // Garis ini memiliki potensi untuk AI. Semakin banyak bidak, semakin tinggi skornya.
             if (aiPieces == 1) score = 1;
             else if (aiPieces == 2) score = 10;
             else if (aiPieces == 3) score = 100;
             else if (aiPieces == 4) score = 1000;
         } else if (playerPieces > 0) {
-            // Garis ini adalah ancaman dari pemain. Semakin banyak bidak, semakin besar ancamannya.
             if (playerPieces == 1) score = -1;
             else if (playerPieces == 2) score = -10;
             else if (playerPieces == 3) score = -100;
@@ -202,7 +190,6 @@ public class AIPlayer {
 
 
     private int[] findMediumMove(Board board) {
-        // Cek apakah AI bisa menang dalam satu langkah
         for (int r = 0; r < board.ROWS; r++) {
             for (int c = 0; c < board.COLS; c++) {
                 if (board.isValidMove(r, c)) {
@@ -217,7 +204,6 @@ public class AIPlayer {
         }
 
 
-        // Cek apakah pemain bisa menang di langkah berikutnya, lalu blokir
         for (int r = 0; r < board.ROWS; r++) {
             for (int c = 0; c < board.COLS; c++) {
                 if (board.isValidMove(r, c)) {
@@ -231,14 +217,10 @@ public class AIPlayer {
             }
         }
 
-
-        // Ambil tengah jika papan 3x3 dan kosong
         if (board.ROWS == 3 && board.COLS == 3 && board.isValidMove(1, 1)) {
             return new int[]{1, 1};
         }
 
-
-        // Ambil sudut secara acak jika kosong
         List<int[]> cornerMoves = new ArrayList<>();
         if (board.isValidMove(0, 0)) cornerMoves.add(new int[]{0, 0});
         if (board.isValidMove(0, board.COLS - 1)) cornerMoves.add(new int[]{0, board.COLS - 1});
